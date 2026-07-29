@@ -2305,7 +2305,7 @@
       });
     }
 
-    // REGISTRO DIARIO COMPLETO CON TOTALES Y SUBTOTALES POR TURNO
+    // REGISTRO DIARIO COMPLETO CON DESGLOSE REAL POR MÁQUINA Y ÍCONOS REALES
     function renderProduccionDiaria() {
       const fechaFiltro = document.getElementById('filterFechaDiaria').value;
       const jornadaFiltro = document.getElementById('filterTurnoDiario').value;
@@ -2315,26 +2315,44 @@
 
       const filtradosProd = registrosProduccion.filter(r => r.fecha === fechaFiltro && (jornadaFiltro === 'todos' || r.jornada === jornadaFiltro));
       
-      // FILTRADO CON DETERMINACIÓN DE JORNADA EN ENSAMBLE
       const filtradosEns = registrosEnsamble.filter(r => {
-        const j = (r.jornada || (r.horario && r.horario.includes('pm-')) ? 'NOCHE' : 'DIA');
+        const j = (r.jornada || ((r.horario && r.horario.includes('pm-')) ? 'NOCHE' : 'DIA'));
         return r.fecha === fechaFiltro && (jornadaFiltro === 'todos' || j === jornadaFiltro);
       });
 
       const filtradosCorte = registrosCorte.filter(r => r.fecha === fechaFiltro);
       const filtradosDesp = registrosDespachosPT.filter(r => r.fecha === fechaFiltro);
 
-      let totalKgProcesados = 0;
-      let totalUnidPerfiles = 0;
+      let totalKgMolinos = 0;
+      let totalKgAglutinados = 0;
+      let totalKgExtruidos = 0;
+      let totalUnidPerfilesExt = 0;
       let totalEstibasFabricadas = 0;
+      let totalEstibasDespachadas = 0;
+      let totalMermaGlobal = 0;
 
       filtradosProd.forEach(r => {
-        totalKgProcesados += (r.cantidad || 0);
-        totalUnidPerfiles += (r.unidades || 0);
+        if (r.maquina.includes('Molino') || r.maquina.includes('Guillotina')) {
+          totalKgMolinos += (r.cantidad || 0);
+        } else if (r.maquina.includes('Aglutinadora')) {
+          totalKgAglutinados += (r.cantidad || 0);
+        } else if (r.maquina.includes('Extrusora') || r.maquina.includes('Bitruder')) {
+          totalKgExtruidos += (r.cantidad || 0);
+          totalUnidPerfilesExt += (r.unidades || 0);
+        }
+        totalMermaGlobal += (r.merma || 0);
       });
 
       filtradosEns.forEach(e => {
         totalEstibasFabricadas += (e.cantRealizada || 0);
+      });
+
+      filtradosDesp.forEach(d => {
+        totalEstibasDespachadas += (d.cantEnviada || 0);
+      });
+
+      filtradosCorte.forEach(c => {
+        totalMermaGlobal += (c.mermaCorte || 0);
       });
 
       if (filtradosProd.length === 0 && filtradosEns.length === 0 && filtradosCorte.length === 0 && filtradosDesp.length === 0) {
@@ -2342,22 +2360,25 @@
         return;
       }
 
-      // CUADRO DE RESUMEN MÉTRICO DEL DÍA
+      // CUADRO DE RESUMEN MÉTRICO NO DUPICADO DEL DÍA
       contenedor.innerHTML += `
         <div style="background: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid var(--primary); margin-bottom: 20px;">
-          <h4 style="color: var(--primary); margin-bottom: 10px;">📊 RESUMEN GENERAL DEL DÍA (${fechaFiltro})</h4>
-          <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-            <div style="flex:1; min-width: 150px;"><small>Total Kilos Producción:</small><div style="font-size: 1.2rem; font-weight: bold; color:#10b981;">${totalKgProcesados.toFixed(1)} Kg</div></div>
-            <div style="flex:1; min-width: 150px;"><small>Unidades Perfiles Brutos:</small><div style="font-size: 1.2rem; font-weight: bold; color:#38bdf8;">${totalUnidPerfiles} Unid.</div></div>
-            <div style="flex:1; min-width: 150px;"><small>Estibas/Pisos Armados:</small><div style="font-size: 1.2rem; font-weight: bold; color:#f59e0b;">${totalEstibasFabricadas} Unid.</div></div>
+          <h4 style="color: var(--primary); margin-bottom: 10px;">📊 RESUMEN GENERAL DESGLOSADO DEL DÍA (${fechaFiltro})</h4>
+          <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <div style="flex:1; min-width: 140px; background:#1e293b; padding:10px; border-radius:6px; border-left:3px solid #38bdf8;"><small>♻️ Kilos Molidos:</small><div style="font-size: 1.1rem; font-weight: bold; color:#38bdf8;">${totalKgMolinos.toFixed(1)} Kg</div></div>
+            <div style="flex:1; min-width: 140px; background:#1e293b; padding:10px; border-radius:6px; border-left:3px solid #a855f7;"><small>🧪 Kilos Aglutinados:</small><div style="font-size: 1.1rem; font-weight: bold; color:#a855f7;">${totalKgAglutinados.toFixed(1)} Kg</div></div>
+            <div style="flex:1; min-width: 140px; background:#1e293b; padding:10px; border-radius:6px; border-left:3px solid #10b981;"><small>⚙️ Kilos Extruidos:</small><div style="font-size: 1.1rem; font-weight: bold; color:#10b981;">${totalKgExtruidos.toFixed(1)} Kg</div><small style="color:var(--text-muted);">${totalUnidPerfilesExt} u</small></div>
+            <div style="flex:1; min-width: 140px; background:#1e293b; padding:10px; border-radius:6px; border-left:3px solid #f59e0b;"><small>🔨 Estibas Armadas:</small><div style="font-size: 1.1rem; font-weight: bold; color:#f59e0b;">${totalEstibasFabricadas} Unid.</div></div>
+            <div style="flex:1; min-width: 140px; background:#1e293b; padding:10px; border-radius:6px; border-left:3px solid #0284c7;"><small>🚚 Estibas Despachadas:</small><div style="font-size: 1.1rem; font-weight: bold; color:#0284c7;">${totalEstibasDespachadas} Unid.</div></div>
+            <div style="flex:1; min-width: 140px; background:#1e293b; padding:10px; border-radius:6px; border-left:3px solid #ef4444;"><small>🗑️ Merma Total:</small><div style="font-size: 1.1rem; font-weight: bold; color:#ef4444;">${totalMermaGlobal.toFixed(1)} Kg</div></div>
           </div>
         </div>
       `;
 
       const ORDEN_SECCIONES = [
-        { titulo: "1. 🌽 MOLINOS (Molino 1, Molino 2 y Guillotina)", maquinas: ["Molino 1", "Molino 2", "Guillotina"] },
+        { titulo: "1. ⚙️ MOLINOS & GUILLOTINA (Molino 1, Molino 2 y Guillotina)", maquinas: ["Molino 1", "Molino 2", "Guillotina"] },
         { titulo: "2. 🧪 AGLUTINADORAS (Aglutinadora 1, 2 y 3)", maquinas: ["Aglutinadora 1", "Aglutinadora 2", "Aglutinadora 3"] },
-        { titulo: "3. 📦 EXTRUSIÓN & TABLAS (Extrusora Principal & Bitruder 1)", maquinas: ["Extrusora Principal", "Bitruder 1"] },
+        { titulo: "3. ⚙️ EXTRUSIÓN & TABLAS (Extrusora Principal & Bitruder 1)", maquinas: ["Extrusora Principal", "Bitruder 1"] },
         { titulo: "4. 🔨 ENSAMBLE (Estibas & Pisos Plásticos)", esEnsamble: true },
         { titulo: "5. ✂️ MESA DE CORTE (Rendimiento & Mermas)", esCorte: true },
         { titulo: "6. 🚚 LOGÍSTICA & DESPACHOS (Producto Terminado)", esLogistica: true },
