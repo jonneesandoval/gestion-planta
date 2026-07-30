@@ -1391,6 +1391,11 @@
       }
     }
 
+    // GENERADOR DE FOLIO SEGURO
+    function generarFolioMovimiento() {
+      return 'MOV-' + Math.floor(1000 + Math.random() * 9000);
+    }
+
     // ESCUCHAR ESTADOS DE MÁQUINAS EN LA NUBE
     db.collection('estado_maquinas').onSnapshot(snapshot => {
       dbEstadoMaquinasNube = {};
@@ -2484,7 +2489,6 @@
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
               });
 
-              // Registrar automáticamente en movimientos para que alimente el Kardex
               db.collection('movimientos').add({
                 folio: generarFolioMovimiento(),
                 tipo: 'ENTRADA',
