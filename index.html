@@ -1507,13 +1507,14 @@
       renderizarTodo();
     });
 
-    // ESCUCHAR MATERIA PRIMA
+    // ESCUCHAR MATERIA PRIMA (CORREGIDO CON RENDERIZADO INMEDIATO)
     db.collection('materia_prima').onSnapshot(snapshot => {
       registrosMP = [];
       snapshot.forEach(doc => {
         registrosMP.push({ id: doc.id, ...doc.data() });
       });
-      renderizarTodo();
+      calcularStockMateriaPrima();
+      renderTablasMovimientos();
     });
 
     // ESCUCHAR MOVIMIENTOS BODEGA PERFILES
@@ -1970,129 +1971,11 @@
       });
     }
 
-    // REGISTRO Y EDICIÓN DE ENSAMBLE
-    function guardarEnsamble(e) {
-      e.preventDefault();
-      const editId = document.getElementById('editEnsambleId').value;
-      const fch = document.getElementById('ensFecha').value;
-      const horario = document.getElementById('ensHorarioSelect').value;
-      const jornada = calcularJornada(horario);
-      const op1 = document.getElementById('ensOperario1Select').value;
-      const op2 = document.getElementById('ensOperario2Select').value || '';
-      const orden = document.getElementById('ensOrdenTrabajo').value.trim().toUpperCase();
-      const producto = document.getElementById('ensProductoSelect').value;
-      const cantRealizada = parseFloat(document.getElementById('ensCantRealizada').value) || 0;
-      const tornillos = parseFloat(document.getElementById('ensTornillos').value) || 0;
-
-      if (!producto || cantRealizada <= 0 || !orden) {
-        alert("Por favor completa los datos de la Orden, Producto Terminado y Cantidad.");
-        return;
-      }
-
-      const operarioTextoCompuesto = (op2 && op2 !== op1) ? `${op1} / ${op2}` : op1;
-
-      if (editId) {
-        db.collection('ensamble_procesos').doc(editId).update({
-          fecha: fch,
-          horario: horario,
-          jornada: jornada,
-          operario1: op1,
-          operario2: op2,
-          operario: operarioTextoCompuesto,
-          ordenTrabajo: orden,
-          productoTerminado: producto,
-          cantRealizada: cantRealizada,
-          tornillos: tornillos
-        }).then(() => {
-          cancelarEdicionEnsamble();
-          alert("✅ Ensamble actualizado correctamente en la nube.");
-        });
-      } else {
-        db.collection('ensamble_procesos').add({
-          fecha: fch,
-          horario: horario,
-          jornada: jornada,
-          operario1: op1,
-          operario2: op2,
-          operario: operarioTextoCompuesto,
-          ordenTrabajo: orden,
-          productoTerminado: producto,
-          cantRealizada: cantRealizada,
-          tornillos: tornillos,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => {
-          document.getElementById('ensCantRealizada').value = '';
-          document.getElementById('ensTornillos').value = '';
-          alert("✅ Ensamble registrado y cargado al Kardex de Producto Terminado.");
-        });
-      }
-    }
-
-    function prepararEdicionEnsamble(id) {
-      const reg = registrosEnsamble.find(r => r.id === id);
-      if (!reg) return;
-
-      document.getElementById('editEnsambleId').value = reg.id;
-      document.getElementById('ensFecha').value = reg.fecha || '';
-      document.getElementById('ensHorarioSelect').value = reg.horario || '7am-5pm';
-      if (reg.operario1 && document.getElementById('ensOperario1Select')) {
-        document.getElementById('ensOperario1Select').value = reg.operario1;
-      }
-      if (reg.operario2 && document.getElementById('ensOperario2Select')) {
-        document.getElementById('ensOperario2Select').value = reg.operario2;
-      }
-      document.getElementById('ensOrdenTrabajo').value = reg.ordenTrabajo || '';
-      document.getElementById('ensProductoSelect').value = reg.productoTerminado || '';
-      mostrarVistaPreviaPTEnsamble();
-      document.getElementById('ensCantRealizada').value = reg.cantRealizada || 0;
-      document.getElementById('ensTornillos').value = reg.tornillos || 0;
-
-      document.getElementById('btnSubmitEnsamble').textContent = "💾 Actualizar Ensamble en Nube";
-      document.getElementById('btnCancelarEnsamble').style.display = "block";
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function cancelarEdicionEnsamble() {
-      document.getElementById('editEnsambleId').value = '';
-      document.getElementById('btnSubmitEnsamble').textContent = "🔨 Registrar Ensamble & Cargar a Kardex PT";
-      document.getElementById('btnCancelarEnsamble').style.display = "none";
-      document.getElementById('formEnsamble').reset();
-    }
-
-    function renderTablaEnsamble() {
-      const tbody = document.getElementById('tablaHistorialEnsambleBody');
-      if (!tbody) return;
-      tbody.innerHTML = '';
-
-      registrosEnsamble.forEach(e => {
-        const jClass = (e.jornada === 'NOCHE' || (e.horario && e.horario.includes('pm-'))) ? 'badge-noche' : 'badge-dia';
-        const jIcon = (e.jornada === 'NOCHE' || (e.horario && e.horario.includes('pm-'))) ? '🌙' : '☀️';
-        const jNombre = (e.jornada === 'NOCHE' || (e.horario && e.horario.includes('pm-'))) ? 'NOCHE' : 'DIA';
-
-        tbody.innerHTML += `
-          <tr>
-            <td><small>${e.fecha || ''}</small> (${e.horario || '7am-5pm'})<br><strong style="color:#f59e0b">OP: ${e.ordenTrabajo || 'S/O'}</strong></td>
-            <td><span class="badge ${jClass}">${jIcon} ${jNombre}</span></td>
-            <td><small>${e.operario || ''}</small></td>
-            <td><strong style="color:#38bdf8">${e.productoTerminado || ''}</strong></td>
-            <td><span class="badge badge-prod">+${e.cantRealizada || 0} u</span></td>
-            <td><small>${e.tornillos || 0} tornillos</small></td>
-            <td>
-              <div style="display: flex; gap: 5px;">
-                <button class="btn btn-warning btn-sm" onclick="prepararEdicionEnsamble('${e.id}')">✏️</button>
-                <button class="btn btn-danger btn-sm" onclick="borrarRegistroNube('ensamble_procesos', '${e.id}')">🗑️</button>
-              </div>
-            </td>
-          </tr>
-        `;
-      });
-    }
-
-    // REGISTRO DE MATERIA PRIMA EN LA NUBE (CORREGIDO CON ESTANDARIZACIÓN EXACTA)
+    // REGISTRO DE MATERIA PRIMA EN LA NUBE (CORREGIDO CON VALORES ESTÁNDARES)
     function guardarEntradaMP(e) {
       e.preventDefault();
       const fch = document.getElementById('mpFecha').value;
-      const tipoMat = document.getElementById('mpTipoSelect').value;
+      const tipoMat = document.getElementById('mpTipoSelect').value; // 'Laminado', 'P.P', 'Otros'
       const cant = parseFloat(document.getElementById('mpCantidad').value) || 0;
       const resp = document.getElementById('mpResponsableSelect').value;
 
