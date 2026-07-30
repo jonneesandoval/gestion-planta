@@ -759,7 +759,7 @@
     <div class="grid-2">
       <div class="card form-panel">
         <h3 style="color: #38bdf8;">📥 Recepción de Materia Prima (Bodega 1)</h3>
-        <form onsubmit="guardarEntradaMP(event)">
+        <form onsubmit="guardarEntradaMP(event)" id="formMateriaPrima">
           <div class="form-group">
             <label>Fecha de Recepción</label>
             <input type="date" id="mpFecha" onchange="recordarFechaInput(this)" required>
@@ -1391,7 +1391,6 @@
       }
     }
 
-    // GENERADOR DE FOLIO SEGURO
     function generarFolioMovimiento() {
       return 'MOV-' + Math.floor(1000 + Math.random() * 9000);
     }
@@ -2091,6 +2090,44 @@
             </td>
           </tr>
         `;
+      });
+    }
+
+    // REGISTRO DE MATERIA PRIMA (CORREGIDO CON ID DE FORMULARIO AISLADO)
+    function guardarEntradaMP(e) {
+      e.preventDefault();
+      const fch = document.getElementById('mpFecha').value;
+      const tipoMat = document.getElementById('mpTipoSelect').value; // 'Laminado', 'P.P', 'Otros'
+      const cant = parseFloat(document.getElementById('mpCantidad').value) || 0;
+      const resp = document.getElementById('mpResponsableSelect').value;
+
+      if (!fch || cant <= 0 || !resp) {
+        alert("Por favor completa todos los campos de la recepción de materia prima.");
+        return;
+      }
+
+      db.collection('materia_prima').add({
+        fecha: fch,
+        material: tipoMat,
+        cantidad: cant,
+        responsable: resp,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        db.collection('movimientos').add({
+          folio: generarFolioMovimiento(),
+          tipo: 'ENTRADA',
+          motivo: `Recepción Materia Prima (${tipoMat})`,
+          fecha: fch,
+          referencia: `MATERIA PRIMA - ${tipoMat.toUpperCase()}`,
+          cantidad: cant,
+          responsable: resp,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        document.getElementById('mpCantidad').value = '';
+        alert("✅ Recepción de Materia Prima cargada a la nube correctamente.");
+      }).catch(err => {
+        alert("Error al guardar en la nube: " + err.message);
       });
     }
 
