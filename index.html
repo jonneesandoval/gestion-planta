@@ -19,12 +19,158 @@
     }
 
     * { box-sizing: border-box; }
+    
+    /* RESET Y ESTRUCTURA BASE PARA PANEL LATERAL */
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: var(--bg-color);
       color: var(--text);
       margin: 0;
+      padding: 0;
+      height: 100vh;
+      overflow: hidden; /* Evita el scroll en toda la página */
+    }
+
+    .app-layout {
+      display: flex;
+      width: 100%;
+      height: 100vh;
+    }
+
+    /* ================= BARRA LATERAL (SIDEBAR) ================= */
+    .sidebar {
+      width: 280px;
+      min-width: 280px;
+      background-color: var(--card-bg);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    /* PERFIL DE USUARIO EN SIDEBAR */
+    .user-profile {
       padding: 20px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      background-color: #0f172a;
+    }
+
+    .user-avatar {
+      width: 45px;
+      height: 45px;
+      background-color: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-weight: bold;
+      border: 2px solid #38bdf8;
+    }
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .user-name {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+
+    .user-role {
+      font-size: 0.75rem;
+      color: var(--success);
+      margin-top: 2px;
+    }
+
+    /* NAVEGACIÓN TIPO ACORDEÓN EN SIDEBAR */
+    .sidebar-nav {
+      flex: 1;
+      padding-top: 10px;
+    }
+
+    .sidebar-group {
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .sidebar-btn {
+      width: 100%;
+      text-align: left;
+      padding: 15px 20px;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.2s;
+    }
+
+    .sidebar-btn:hover {
+      background-color: #334155;
+    }
+
+    .sidebar-btn::after {
+      content: '▼';
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      transition: transform 0.3s;
+    }
+
+    .sidebar-group.active .sidebar-btn::after {
+      transform: rotate(180deg);
+    }
+
+    .sidebar-menu-content {
+      display: none;
+      flex-direction: column;
+      background-color: var(--bg-color);
+    }
+
+    .sidebar-group.active .sidebar-menu-content {
+      display: flex;
+    }
+
+    .sidebar-item-btn {
+      width: 100%;
+      text-align: left;
+      padding: 12px 15px 12px 40px;
+      background: transparent;
+      color: var(--text-muted);
+      border: none;
+      font-size: 0.85rem;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .sidebar-item-btn:hover {
+      color: var(--primary);
+      background-color: #1e293b;
+    }
+
+    .sidebar-item-btn.active {
+      color: var(--primary);
+      font-weight: 700;
+      background-color: #1e293b;
+      border-left: 3px solid var(--primary);
+    }
+
+    /* ================= CONTENIDO PRINCIPAL ================= */
+    .main-content {
+      flex: 1;
+      padding: 20px 30px;
+      overflow-y: auto;
+      background-color: var(--bg-color);
     }
 
     h1, h2, h3, h4 { margin-top: 0; }
@@ -48,14 +194,6 @@
       border: 1px solid var(--success);
     }
 
-    .main-tabs {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      border-bottom: 2px solid var(--border-color);
-      flex-wrap: wrap;
-    }
-
     .sub-tabs {
       display: flex;
       gap: 8px;
@@ -65,23 +203,6 @@
       border-radius: 8px;
       border: 1px solid var(--border-color);
       flex-wrap: wrap;
-    }
-
-    .tab-btn {
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      padding: 12px 18px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      border-bottom: 3px solid transparent;
-      transition: all 0.2s;
-    }
-
-    .tab-btn.active {
-      color: var(--primary);
-      border-bottom-color: var(--primary);
     }
 
     .sub-tab-btn {
@@ -318,8 +439,8 @@
     }
 
     @media print {
-      body { background: white; color: black; padding: 0; }
-      .main-tabs, .sub-tabs, .form-panel, .btn, .no-print, .search-box { display: none !important; }
+      body, .app-layout, .main-content { height: auto; overflow: visible; display: block; padding: 0; background: white; }
+      .sidebar, .no-print, .search-box, .sub-tabs { display: none !important; }
       .card { border: none; box-shadow: none; padding: 0; }
       .grid-2 { display: block; }
       table, th, td { border: 1px solid #ddd; color: black; }
@@ -330,10 +451,835 @@
   <!-- LIBRERÍAS DE FIREBASE -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  
+  <!-- LIBRERÍA PARA EXPORTAR A EXCEL (SheetJS) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
-  <!-- VENTANA FLOTANTE DE SEGURIDAD PARA AJUSTAR / BORRAR CANTIDADES -->
+  <!-- ==================== CONTENEDOR PRINCIPAL ==================== -->
+  <div class="app-layout">
+
+    <!-- ==================== BARRA LATERAL IZQUIERDA ==================== -->
+    <aside class="sidebar no-print">
+      
+      <!-- PERFIL DE USUARIO (BASE) -->
+      <div class="user-profile">
+        <div class="user-avatar">JS</div>
+        <div class="user-info">
+          <span class="user-name">Jonnee Sandoval</span>
+          <span class="user-role">🟢 Administrador / Planta</span>
+        </div>
+      </div>
+
+      <!-- NAVEGACIÓN TIPO ACORDEÓN -->
+      <nav class="sidebar-nav">
+        
+        <!-- GRUPO 1: ENTRADAS E INSUMOS -->
+        <div class="sidebar-group">
+          <button class="sidebar-btn" onclick="toggleSidebarGroup(this)">
+            <span>📥 Entradas / Insumos</span>
+          </button>
+          <div class="sidebar-menu-content">
+            <button class="sidebar-item-btn" onclick="switchMainTab(this, 'entradas_mp_modulo')">Entradas Materia Prima (B1)</button>
+            <button class="sidebar-item-btn" onclick="switchMainTab(this, 'entradas_modulo')">Entradas Perfiles (Bodega 5)</button>
+          </div>
+        </div>
+
+        <!-- GRUPO 2: PRODUCCIÓN Y PLANTA (Abierto por defecto) -->
+        <div class="sidebar-group active">
+          <button class="sidebar-btn" onclick="toggleSidebarGroup(this)">
+            <span>🏭 Producción & Planta</span>
+          </button>
+          <div class="sidebar-menu-content">
+            <button class="sidebar-item-btn active" onclick="switchMainTab(this, 'produccion_modulo')">Registro Producción (Maq)</button>
+            <button class="sidebar-item-btn" onclick="switchMainTab(this, 'corte_modulo')">Mesa de Corte (Mermas)</button>
+            <button class="sidebar-item-btn" onclick="switchMainTab(this, 'ensamble_modulo')">Ensamble (Estibas/Pisos)</button>
+            <button class="sidebar-item-btn" onclick="switchMainTab(this, 'logistica_pt_modulo')">Logística & Despachos PT</button>
+            <button class="sidebar-item-btn" onclick="switchMainTab(this, 'salidas_modulo')">Salidas Perfiles (Bodega 6)</button>
+          </div>
+        </div>
+
+        <!-- GRUPO 3: INVENTARIOS Y KARDEX -->
+        <div class="sidebar-group">
+          <button class="sidebar-btn" onclick="toggleSidebarGroup(this)">
+            <span>📊 Inventario & Kardex</span>
+          </button>
+          <div class="sidebar-menu-content">
+            <button class="sidebar-item-btn" onclick="switchMainTab(this, 'stock_modulo')">Kardex Perfiles (128 Ref)</button>
+            <button class="sidebar-item-btn" onclick="switchMainTab(this, 'kardex_pt_modulo')">Kardex Producto Terminado</button>
+            <button class="sidebar-item-btn" onclick="switchMainTab(this, 'movimientos_modulo')">Libro Único de Movimientos</button>
+            <button class="sidebar-item-btn" onclick="switchMainTab(this, 'diario_modulo')">Consolidado Diario Completo</button>
+          </div>
+        </div>
+
+        <!-- GRUPO 4: SISTEMA Y CONFIGURACIÓN -->
+        <div class="sidebar-group">
+          <button class="sidebar-btn" onclick="toggleSidebarGroup(this)">
+            <span>⚙️ Sistema / Opciones</span>
+          </button>
+          <div class="sidebar-menu-content">
+            <button class="sidebar-item-btn" onclick="switchMainTab(this, 'config_modulo')">Personal & Configuración</button>
+            <button class="sidebar-item-btn" onclick="switchMainTab(this, 'datos_raw_modulo')">Exportar Datos y Backups</button>
+          </div>
+        </div>
+
+      </nav>
+    </aside>
+
+    <!-- ==================== CONTENIDO PRINCIPAL DERECHO ==================== -->
+    <main class="main-content">
+
+      <!-- CABECERA DE LA PANTALLA DERECHA -->
+      <div class="header-bar">
+        <div>
+          <h1>Control de Planta & Inventario en Vivo</h1>
+          <small style="color: var(--text-muted)">Sistema Integrado Green Plastic Colombia</small>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <div class="status-cloud">☁️ Nube Conectada</div>
+          <button class="btn btn-success no-print" onclick="window.print()" style="width: auto;">🖨️ Imprimir PDF</button>
+        </div>
+      </div>
+
+      <!-- TARJETAS DE MÉTRICAS GLOBALES -->
+      <div class="metrics-container no-print">
+        <div class="metric-card" style="border-left-color: #3b82f6;">
+          <small>Stock Materia Prima (Laminado/PP/Otros)</small>
+          <div class="metric-value" id="totalStockMP">0.0 Kg</div>
+        </div>
+        <div class="metric-card" style="border-left-color: #10b981;">
+          <small>Total Perfiles en Stock Real (Bodega 5)</small>
+          <div class="metric-value" id="totalStockPerfiles">0 Unid.</div>
+        </div>
+        <div class="metric-card" style="border-left-color: #a855f7;">
+          <small>Total Producto Terminado (Estibas/Pisos)</small>
+          <div class="metric-value" id="totalStockPT">0 Unid.</div>
+        </div>
+        <div class="metric-card" style="border-left-color: #ef4444;">
+          <small>Total Mermas de Máquinas</small>
+          <div class="metric-value" id="totalMerma">0.0 Kg</div>
+        </div>
+      </div>
+
+      <!-- ==================== 1. MÓDULO PRODUCCIÓN POR MÁQUINA ==================== -->
+      <div id="produccion_modulo" class="tab-content active">
+        <h3>Selecciona la Máquina para Registrar Producción:</h3>
+        
+        <div class="sub-tabs no-print">
+          <button class="sub-tab-btn active" onclick="switchMachineTab(this, 'ag1')">Aglutinadora 1</button>
+          <button class="sub-tab-btn" onclick="switchMachineTab(this, 'ag2')">Aglutinadora 2</button>
+          <button class="sub-tab-btn" onclick="switchMachineTab(this, 'ag3')">Aglutinadora 3</button>
+          <button class="sub-tab-btn" onclick="switchMachineTab(this, 'mol1')">Molino 1</button>
+          <button class="sub-tab-btn" onclick="switchMachineTab(this, 'mol2')">Molino 2</button>
+          <button class="sub-tab-btn" onclick="switchMachineTab(this, 'guil')">Guillotina</button>
+          <button class="sub-tab-btn" onclick="switchMachineTab(this, 'ext1')">Extrusora Principal</button>
+          <button class="sub-tab-btn" onclick="switchMachineTab(this, 'bit1')">Bitruder 1</button>
+        </div>
+
+        <div class="grid-2">
+          <div class="card form-panel">
+            <h3 id="tituloMaquinaActiva" style="color: var(--primary);">Registrar en: Aglutinadora 1</h3>
+
+            <div class="machine-status-bar">
+              <span style="font-size: 0.9rem; font-weight: bold;">Estado de Operatividad:</span>
+              <button type="button" id="btnPasadorEstadoMaquina" class="toggle-status-btn activa" onclick="toggleEstadoMaquinaActual()">🟢 EN FUNCIONAMIENTO (SI)</button>
+            </div>
+            
+            <form onsubmit="guardarProduccionMaquina(event)" id="formProduccionMaquina">
+              <input type="hidden" id="editRecordId" value="">
+
+              <div class="form-group">
+                <label>Fecha de Producción</label>
+                <input type="date" id="prodFecha" onchange="recordarFechaInput(this)" required>
+              </div>
+
+              <div class="form-group">
+                <label>Horario de Turno</label>
+                <select id="prodHorarioSelect" onchange="actualizarCalculoJornada()" required>
+                  <option value="6am-6pm">6am - 6pm (Día)</option>
+                  <option value="6pm-6am">6pm - 6am (Noche)</option>
+                  <option value="7am-5pm" selected>7am - 5pm (Día)</option>
+                  <option value="7pm-5am">7pm - 5am (Noche)</option>
+                  <option value="6am-4pm">6am - 4pm (Día)</option>
+                  <option value="6pm-4am">6pm - 4am (Noche)</option>
+                  <option value="8am-6pm">8am - 6pm (Día)</option>
+                  <option value="8pm-6am">8pm - 6am (Noche)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Jornada Calculada</label>
+                <input type="text" id="prodJornadaDisplay" readonly style="background: #1e293b; font-weight: bold; color: var(--warning); border-color: var(--warning);" value="☀️ DIA">
+              </div>
+
+              <div class="form-group">
+                <label id="lblOperario1">Operario / Trabajador Principal</label>
+                <select id="prodOperarioSelect" required></select>
+              </div>
+
+              <div class="form-group" id="grupoOperario2" style="display: none;">
+                <label style="color: #38bdf8;">👷 Operario 2 (Acompañante / Apoyo en Extrusora)</label>
+                <select id="prodOperario2Select"></select>
+              </div>
+
+              <div class="form-group" id="grupoRecetaAglutinado">
+                <label style="color: #38bdf8; font-weight: bold;">🧪 Material Consumido (Receta Aglutinado):</label>
+                <select id="prodRecetaSelect">
+                  <option value="70/30">Mezcla Standard 70/30 (70% Laminado / 30% P.P)</option>
+                  <option value="Laminado">Solo Laminado (100% Laminado)</option>
+                  <option value="PP">Solo P.P (100% Polipropileno)</option>
+                  <option value="Otros">Otros Materiales (100%)</option>
+                </select>
+              </div>
+
+              <div class="form-group" id="grupoCantidadUnica">
+                <label id="lblCantidad">Kilos Procesados / Cantidad (Kg)</label>
+                <input type="number" step="0.01" id="prodCantidad" placeholder="0.00">
+              </div>
+
+              <div class="form-group" id="grupoMultiPerfilMaquina" style="display: none;">
+                <label style="color: #10b981; font-weight: bold;" id="lblTituloMultiPerfil">📦 Perfiles Producidos Sin Cortar (Entrada Directa a Kardex):</label>
+                <div id="contenedorFilasPerfiles"></div>
+
+                <button type="button" class="btn" style="background: #6366f1; margin-top: 8px; margin-bottom: 12px;" onclick="agregarFilaPerfil()" id="btnAgregarOtroPerfilMulti">➕ Agregar otro perfil</button>
+
+                <div style="background: #0f172a; padding: 12px; border-radius: 6px; border: 1px solid var(--primary); text-align: right; margin-bottom: 15px;">
+                  <small style="color: var(--text-muted)">Calculado Total de Producción Bruta:</small>
+                  <div id="displayTotalKilosMulti" style="font-size: 1.3rem; font-weight: bold; color: #10b981;">0.00 Kg / 0 Unid.</div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Merma / Desperdicio de Máquina (Kg)</label>
+                <input type="number" step="0.01" id="prodMerma" placeholder="0.00" value="0">
+              </div>
+
+              <div class="form-group">
+                <label style="color: #f59e0b; font-weight: bold;">📝 Observaciones / Novedades del Turno:</label>
+                <textarea id="prodObservacion" rows="2" placeholder="Ej: Reporte de novedades, mantenimientos o paradas..."></textarea>
+              </div>
+
+              <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-success" id="btnSubmitProduccion" style="flex: 2;">⚡ Guardar Producción en la Nube</button>
+                <button type="button" class="btn btn-warning" id="btnCancelarEdicion" style="flex: 1; display: none; background: #64748b; color: white;" onclick="cancelarEdicionProduccion()">Cancelar</button>
+              </div>
+            </form>
+
+            <button type="button" class="btn btn-danger" id="btnReporteMaquinaDanada" style="display: none; font-size: 1.05rem; margin-top: 10px;" onclick="guardarReporteMaquinaDanadaExplicito()">
+              🛠️ Registrar Informe: MÁQUINA DAÑADA (0 Kilos)
+            </button>
+          </div>
+
+          <div class="card">
+            <h3>Historial Sincronizado de esta Máquina</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha / Horario</th>
+                  <th>Jornada</th>
+                  <th>Operarios</th>
+                  <th>Detalle / Receta / Observación</th>
+                  <th>Cantidad</th>
+                  <th>Merma</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="tablaHistorialMaquinaBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 2. MÓDULO DE ENSAMBLE ==================== -->
+      <div id="ensamble_modulo" class="tab-content">
+        <div class="grid-2">
+          <div class="card form-panel">
+            <h3 style="color: #f59e0b;">🔨 Registro de Ensamble (Estibas & Pisos Plásticos)</h3>
+            
+            <form onsubmit="guardarEnsamble(event)" id="formEnsamble">
+              <input type="hidden" id="editEnsambleId" value="">
+
+              <div class="form-group">
+                <label>Fecha de Ensamble</label>
+                <input type="date" id="ensFecha" onchange="recordarFechaInput(this)" required>
+              </div>
+
+              <div class="form-group">
+                <label>Horario de Turno</label>
+                <select id="ensHorarioSelect" required>
+                  <option value="7am-5pm" selected>7am - 5pm (Día)</option>
+                  <option value="6am-6pm">6am - 6pm (Día)</option>
+                  <option value="6pm-6am">6pm - 6am (Noche)</option>
+                  <option value="7pm-5am">7pm - 5am (Noche)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>👷 Operario Principal 1</label>
+                <select id="ensOperario1Select" required></select>
+              </div>
+
+              <div class="form-group">
+                <label style="color: #38bdf8;">👷 Operario 2 (Apoyo / Pareja de Ensamble)</label>
+                <select id="ensOperario2Select"></select>
+              </div>
+
+              <div class="form-group">
+                <label style="color: #f59e0b; font-weight: bold;">📋 Número de Orden de Trabajo (OP):</label>
+                <input type="text" id="ensOrdenTrabajo" placeholder="Ej: YP-500, DM-100" style="text-transform: uppercase;" required>
+              </div>
+
+              <div class="form-group">
+                <label>🔍 Selecciona Producto Terminado Elaborado:</label>
+                <input type="text" class="search-box" id="searchProductoTerminado" placeholder="Buscar estiba por nombre o número..." oninput="filtrarProductoTerminadoSelect()">
+                <select id="ensProductoSelect" size="5" onchange="mostrarVistaPreviaPTEnsamble()" required></select>
+                
+                <div id="previewPTCardEnsamble" class="preview-card-box" style="display: none;">
+                  <small style="color: var(--text-muted);">Descripción Completa Seleccionada:</small>
+                  <div id="lblPreviewPTTextEnsamble" style="font-weight: bold; margin-top: 4px;">-</div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Cantidad de Estibas / Pisos Elaborados (Unidades)</label>
+                <input type="number" id="ensCantRealizada" min="1" step="1" placeholder="Ej: 400" required>
+              </div>
+
+              <div class="form-group">
+                <label>Tornillos Ensamblados Utilizados (Unidades Insumo)</label>
+                <input type="number" id="ensTornillos" min="0" step="1" placeholder="Ej: 2400" required>
+              </div>
+
+              <div style="display: flex; gap: 10px;">
+                <button type="submit" class="btn btn-warning" id="btnSubmitEnsamble" style="flex: 2; background: #f59e0b; color: #000; font-weight: bold;">🔨 Registrar Ensamble & Cargar a Kardex PT</button>
+                <button type="button" class="btn" id="btnCancelarEnsamble" style="flex: 1; display: none; background: #64748b; color: white;" onclick="cancelarEdicionEnsamble()">Cancelar</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card">
+            <h3>Historial Sincronizado de Ensambles</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha / Orden / Horario</th>
+                  <th>Jornada</th>
+                  <th>Operarios</th>
+                  <th>Producto Terminado</th>
+                  <th>Cant. Elaborada</th>
+                  <th>Tornillos Usados</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="tablaHistorialEnsambleBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 3. MÓDULO LOGÍSTICA & DESPACHOS PRODUCTO TERMINADO ==================== -->
+      <div id="logistica_pt_modulo" class="tab-content">
+        <div class="grid-2">
+          <div class="card form-panel">
+            <h3 style="color: #0284c7;">🚚 Salida / Despacho de Producto Terminado (Logística)</h3>
+            
+            <form onsubmit="guardarDespachoPT(event)">
+              <div class="form-group">
+                <label>Fecha de Despacho</label>
+                <input type="date" id="despFecha" onchange="recordarFechaInput(this)" required>
+              </div>
+
+              <div class="form-group">
+                <label>Selecciona la Orden de Trabajo (OP) con Stock Disponible:</label>
+                <select id="despOrdenSelect" onchange="actualizarInfoOrdenSeleccionada()" required></select>
+              </div>
+
+              <div style="background: #0f172a; padding: 12px; border-radius: 6px; border: 1px solid #0284c7; margin-bottom: 15px;">
+                <small style="color: var(--text-muted);">Información del Producto a Despachar:</small>
+                <div id="lblDetalleOrdenDespacho" style="color: #38bdf8; font-weight: bold; margin-top: 4px;">Selecciona una orden...</div>
+                <div id="lblStockDisponibleOrden" style="color: #10b981; font-weight: bold; font-size: 1.1rem; margin-top: 2px;">Stock Disponible: 0 Unid.</div>
+              </div>
+
+              <div class="form-group">
+                <label>Cantidad de Unidades a Despachar / Enviar</label>
+                <input type="number" id="despCantEnviada" min="1" step="1" placeholder="Ej: 150" required>
+              </div>
+
+              <div class="form-group">
+                <label>Cliente / N° Guía de Transporte / Destino</label>
+                <input type="text" id="despClienteGuia" placeholder="Ej: Muestra Cliente X / Guía #1234" required>
+              </div>
+
+              <div class="form-group">
+                <label>Responsable de Logística / Despacho</label>
+                <select id="despResponsableSelect" required></select>
+              </div>
+
+              <button type="submit" class="btn" style="background: #0284c7;">🚚 Confirmar Despacho & Descontar del Kardex</button>
+            </form>
+          </div>
+
+          <div class="card">
+            <h3>Historial de Despachos de Producto Terminado (Logística)</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Folio N°</th>
+                  <th>Fecha</th>
+                  <th>Orden (OP)</th>
+                  <th>Producto Terminado</th>
+                  <th>Cant. Despachada</th>
+                  <th>Cliente / Guía</th>
+                  <th>Responsable</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="tablaHistorialDespachosPTBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 4. MÓDULO MESA DE CORTE MULTI-PERFIL (SOLO EFICIENCIA) ==================== -->
+      <div id="corte_modulo" class="tab-content">
+        <div class="grid-2">
+          <div class="card form-panel">
+            <h3 style="color: #a855f7;">✂️ Registro de Corte Multi-Perfil (Eficiencia & Merma)</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">
+              📌 <em>Nota: Este módulo registra únicamente la eficiencia de corte del turno y la merma de serrín/despunte. No altera inventarios ni Kardex.</em>
+            </p>
+            
+            <form onsubmit="guardarProcesoCorteMulti(event)">
+              <div class="form-group">
+                <label>Fecha de Corte</label>
+                <input type="date" id="corteFecha" onchange="recordarFechaInput(this)" required>
+              </div>
+
+              <div class="form-group">
+                <label>Operario / Encargado de Corte</label>
+                <select id="corteOperarioSelect" required></select>
+              </div>
+
+              <label style="color: #a855f7; font-weight: bold;">✂️ Perfiles Cortados en la Jornada:</label>
+              <div id="contenedorFilasMultiCorte"></div>
+
+              <button type="button" class="btn" style="background: #6366f1; margin-top: 5px; margin-bottom: 15px;" onclick="agregarFilaCorteMulti()">➕ Agregar otro proceso de corte</button>
+
+              <div style="background: #0f172a; padding: 12px; border-radius: 6px; border: 1px solid #ef4444; margin-bottom: 15px; text-align: center;">
+                <small style="color: var(--text-muted)">Resumen de Corte Calculado:</small>
+                <div id="lblResumenTotalesCorte" style="font-size: 1.1rem; font-weight: bold; color: #38bdf8; margin-top: 3px;">Entrante: 0.00 Kg | Cortado: 0.00 Kg</div>
+                <div id="lblMermaCorteCalculada" style="font-size: 1.3rem; font-weight: bold; color: #ef4444; margin-top: 3px;">Merma Total: 0.00 Kg</div>
+              </div>
+
+              <button type="submit" class="btn btn-success" style="background: #a855f7;">✂️ Guardar Informe de Corte en la Nube</button>
+            </form>
+          </div>
+
+          <div class="card">
+            <h3>Historial de Rendimiento de Corte</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Operario</th>
+                  <th>Entrada (Tira Larga)</th>
+                  <th>Salida (Cortado)</th>
+                  <th>Merma Generada</th>
+                  <th>Acción</th>
+                </tr>
+              </thead>
+              <tbody id="tablaHistorialCorteBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 5. MÓDULO ENTRADAS DE MATERIA PRIMA ==================== -->
+      <div id="entradas_mp_modulo" class="tab-content">
+        <div class="grid-2">
+          <div class="card form-panel">
+            <h3 style="color: #38bdf8;">📥 Recepción de Materia Prima (Bodega 1)</h3>
+            <form onsubmit="guardarEntradaMP(event)" id="formMateriaPrima">
+              <div class="form-group">
+                <label>Fecha de Recepción</label>
+                <input type="date" id="mpFecha" onchange="recordarFechaInput(this)" required>
+              </div>
+              <div class="form-group">
+                <label>Tipo de Material Ingresado</label>
+                <select id="mpTipoSelect" required>
+                  <option value="Laminado">Material Laminado (Kilos)</option>
+                  <option value="P.P">Material P.P (Polipropileno) (Kilos)</option>
+                  <option value="Otros">Otros Materiales (Kilos)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Cantidad Ingresada (Kilos)</label>
+                <input type="number" step="0.01" id="mpCantidad" placeholder="Ej: 10000.00" required>
+              </div>
+              <div class="form-group">
+                <label>Responsable de Recepción</label>
+                <select id="mpResponsableSelect" required></select>
+              </div>
+              <button type="submit" class="btn" style="background: #0284c7;">➕ Cargar Materia Prima a Nube</button>
+            </form>
+          </div>
+
+          <div class="card">
+            <h3>Resumen de Inventario de Materia Prima Bruta</h3>
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+              <div style="background: #0f172a; padding: 10px; border-radius: 6px; flex: 1; border-left: 3px solid #38bdf8;">
+                <small>Material Laminado</small>
+                <div id="stockLaminadoVal" style="font-size: 1.2rem; font-weight: bold; color: #38bdf8;">0.0 Kg</div>
+              </div>
+              <div style="background: #0f172a; padding: 10px; border-radius: 6px; flex: 1; border-left: 3px solid #a855f7;">
+                <small>Material P.P</small>
+                <div id="stockPPVal" style="font-size: 1.2rem; font-weight: bold; color: #a855f7;">0.0 Kg</div>
+              </div>
+              <div style="background: #0f172a; padding: 10px; border-radius: 6px; flex: 1; border-left: 3px solid #f59e0b;">
+                <small>Otros Materiales</small>
+                <div id="stockOtrosVal" style="font-size: 1.2rem; font-weight: bold; color: #f59e0b;">0.0 Kg</div>
+              </div>
+            </div>
+
+            <h3>Historial de Entradas de Materia Prima</h3>
+            <table>
+              <thead>
+                <tr><th>Fecha</th><th>Material</th><th>Kilos Ingresados</th><th>Responsable</th><th>Acción</th></tr>
+              </thead>
+              <tbody id="tablaEntradasMPBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 6. MÓDULO ENTRADAS DE PERFILES ==================== -->
+      <div id="entradas_modulo" class="tab-content">
+        <div class="grid-2">
+          <div class="card form-panel">
+            <h3 style="color: #10b981;">📦 Ingreso de Perfiles Especiales (Bodega 5)</h3>
+            <form onsubmit="guardarEntradaStock(event)">
+              <div class="form-group">
+                <label>Fecha de Ingreso</label>
+                <input type="date" id="entradaFecha" onchange="recordarFechaInput(this)" required>
+              </div>
+              <div class="form-group">
+                <label>Tipo de Entrada</label>
+                <select id="entradaTipo">
+                  <option value="Carga Inicial de Stock">Carga Inicial de Stock</option>
+                  <option value="Reingreso / Devolución">Reingreso / Devolución de Cliente</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>🔍 Buscar Perfil:</label>
+                <input type="text" class="search-box" id="searchEntradaRef" placeholder="Ej: 82, Durmiente..." oninput="filtrarPerfiles('searchEntradaRef', 'entradaRefSelect')">
+                <select id="entradaRefSelect" size="4" required></select>
+              </div>
+              <div class="form-group">
+                <label>Cantidad de Unidades Ingresadas</label>
+                <input type="number" id="entradaCantidad" placeholder="0" required>
+              </div>
+              <div class="form-group">
+                <label>Responsable de Recepción</label>
+                <select id="entradaResponsableSelect" required></select>
+              </div>
+              <button type="submit" class="btn btn-success">➕ Registrar Entrada de Perfiles</button>
+            </form>
+          </div>
+
+          <div class="card">
+            <h3>Historial de Entradas a Inventario de Perfiles</h3>
+            <table>
+              <thead>
+                <tr><th>Fecha</th><th>Tipo</th><th>Perfil</th><th>Cant.</th><th>Responsable</th><th>Acción</th></tr>
+              </thead>
+              <tbody id="tablaEntradasBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 7. MÓDULO SALIDAS / DESPACHOS ==================== -->
+      <div id="salidas_modulo" class="tab-content">
+        <div class="grid-2">
+          <div class="card form-panel">
+            <h3 style="color: #ef4444;">📤 Salida de Perfiles / Despacho (Bodega 6)</h3>
+            <form onsubmit="guardarSalidaStock(event)">
+              <div class="form-group">
+                <label>Fecha de Salida</label>
+                <input type="date" id="salidaFecha" onchange="recordarFechaInput(this)" required>
+              </div>
+              <div class="form-group">
+                <label>Motivo de Salida</label>
+                <select id="salidaTipo">
+                  <option value="Despacho / Venta a Cliente">Despacho / Venta a Cliente</option>
+                  <option value="Baja: Producto Dañado / Mala Calidad">Baja: Producto Dañado / Mala Calidad</option>
+                  <option value="Muestra / Mantenimiento">Muestra Técnica / Mantenimiento</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>🔍 Buscar Perfil:</label>
+                <input type="text" class="search-box" id="searchSalidaRef" placeholder="Ej: 82, Durmiente..." oninput="filtrarPerfiles('searchSalidaRef', 'salidaRefSelect')">
+                <select id="salidaRefSelect" size="4" required></select>
+              </div>
+              <div class="form-group">
+                <label>Cantidad de Unidades Retiradas</label>
+                <input type="number" id="salidaCantidad" placeholder="0" required>
+              </div>
+              <div class="form-group">
+                <label>Responsable de Despacho</label>
+                <select id="salidaResponsableSelect" required></select>
+              </div>
+              <button type="submit" class="btn btn-danger">➖ Registrar Salida de Stock</button>
+            </form>
+          </div>
+
+          <div class="card">
+            <h3>Historial de Salidas y Despachos</h3>
+            <table>
+              <thead>
+                <tr><th>Fecha</th><th>Motivo</th><th>Perfil</th><th>Cant.</th><th>Responsable</th><th>Acción</th></tr>
+              </thead>
+              <tbody id="tablaSalidasBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 8. MOVIMIENTOS Y REGISTRO ÚNICO ==================== -->
+      <div id="movimientos_modulo" class="tab-content">
+        <div class="card">
+          <h2 style="color: #38bdf8;">📜 Libro Unificado de Movimientos de Bodega (Kardex Audit)</h2>
+          <div class="grid-2" style="grid-template-columns: 1fr 2fr 1fr; margin-bottom: 15px; gap: 10px;">
+            <input type="date" id="filterFechaMovimientos" onchange="renderModuloMovimientos()" style="background: #1e293b; color: #38bdf8; font-weight: bold;" title="Filtrar por Fecha">
+            <input type="text" class="search-box" id="searchMovimientos" placeholder="🔍 Buscar por Folio, Perfil, Motivo o Responsable..." oninput="renderModuloMovimientos()" style="margin-bottom: 0;">
+            <select id="filterTipoMovimiento" onchange="renderModuloMovimientos()">
+              <option value="todos">Todos (Entradas y Salidas)</option>
+              <option value="ENTRADA">Solo ENTRADAS (➕)</option>
+              <option value="SALIDA">Solo SALIDAS (➖)</option>
+            </select>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Folio N°</th>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Perfil / Referencia</th>
+                <th>Cant. Unid.</th>
+                <th>Motivo / Origen</th>
+                <th>Responsable</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tablaMovimientosBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ==================== 9. KARDEX PERFILES ==================== -->
+      <div id="stock_modulo" class="tab-content">
+        <div class="card">
+          <h2>Stock Real de Perfiles (Kardex de 128 Referencias)</h2>
+          <div class="grid-2" style="grid-template-columns: 2fr 1fr; margin-bottom: 15px;">
+            <input type="text" class="search-box" id="searchKardex" placeholder="🔍 Buscar por número de perfil o nombre..." oninput="renderKardex()">
+            <select id="filterStockStatus" onchange="renderKardex()">
+              <option value="todos">Mostrar los 128 Perfiles</option>
+              <option value="con_stock">Solo perfiles CON STOCK (>0)</option>
+              <option value="sin_stock">Solo perfiles SIN STOCK (=0)</option>
+            </select>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>N° Referencia y Descripción del Perfil</th>
+                <th style="color: #10b981;">➕ Entradas (Bodega 5)</th>
+                <th style="color: #ef4444;">➖ Salidas (Bodega 6)</th>
+                <th>📦 Stock Actual Real</th>
+                <th>Ajuste / Borrado Seguro</th>
+              </tr>
+            </thead>
+            <tbody id="tablaKardexBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ==================== 10. KARDEX PRODUCTO TERMINADO (ESTIBAS / OP) ==================== -->
+      <div id="kardex_pt_modulo" class="tab-content">
+        <div class="card">
+          <h2 style="color: #10b981;">🏆 Kardex de Producto Terminado (Estibas & Ordenes de Trabajo)</h2>
+          <input type="text" class="search-box" id="searchKardexPT" placeholder="🔍 Buscar por N° de Orden (Ej: YP-500) o Producto Terminado..." oninput="renderKardexPT()">
+
+          <table>
+            <thead>
+              <tr>
+                <th>N° Orden de Trabajo (OP)</th>
+                <th>Producto Terminado (Estiba / Piso)</th>
+                <th style="color: #10b981;">🔨 Fabricadas (Ensamble)</th>
+                <th style="color: #f59e0b;">🚚 Despachadas (Logística)</th>
+                <th>📦 Stock Actual Disponible</th>
+              </tr>
+            </thead>
+            <tbody id="tablaKardexPTBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ==================== 11. REGISTRO DIARIO COMPLETO ESTRUCTURADO ==================== -->
+      <div id="diario_modulo" class="tab-content">
+        <div class="card">
+          <h2>Consolidado General de Planta por Día y Jornada</h2>
+          
+          <div style="display: flex; gap: 20px; margin-bottom: 20px; background: #0f172a; padding: 15px; border-radius: 6px;" class="no-print">
+            <div style="flex: 1;">
+              <label>Fecha a Consultar:</label>
+              <input type="date" id="filterFechaDiaria" onchange="renderProduccionDiaria()">
+            </div>
+            <div style="flex: 1;">
+              <label>Filtrar por Jornada:</label>
+              <select id="filterTurnoDiario" onchange="renderProduccionDiaria()">
+                <option value="todos">Todas las Jornadas (Día y Noche)</option>
+                <option value="DIA">Solo Jornada Día (☀️)</option>
+                <option value="NOCHE">Solo Jornada Noche (🌙)</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="contenedorDiarioEstructurado"></div>
+        </div>
+      </div>
+
+      <!-- ==================== 12. CONFIGURACIÓN Y PERSONAL ==================== -->
+      <div id="config_modulo" class="tab-content">
+        <div class="grid-2">
+          <!-- PLANTILLA DE PERSONAL -->
+          <div class="card">
+            <h3>👷 Plantilla de Personal (Nube)</h3>
+            <p id="resumenNumTrabajadores" style="color: #10b981; font-weight: bold; font-size: 1.2rem;">Cargando...</p>
+
+            <button class="btn" style="background: #6366f1; width: 100%; margin-bottom: 15px;" onclick="restaurarListaOficial()">🔄 Cargar Lista Oficial en Nube</button>
+            
+            <form onsubmit="guardarNuevoTrabajador(event)" style="margin-bottom: 20px;">
+              <div class="form-group">
+                <label>Agregar Nuevo Trabajador</label>
+                <input type="text" id="nuevoTrabajadorInput" placeholder="Ej: PEREZ ALVAREZ CARLOS" required>
+              </div>
+              <button type="submit" class="btn btn-success">➕ Agregar Trabajador</button>
+            </form>
+
+            <table>
+              <thead>
+                <tr><th>N°</th><th>Nombre Completo</th><th>Acción</th></tr>
+              </thead>
+              <tbody id="tablaTrabajadoresBody"></tbody>
+            </table>
+          </div>
+
+          <!-- AGREGAR NUEVO PERFIL Y NUEVO PRODUCTO TERMINADO -->
+          <div>
+            <!-- NUEVO PERFIL 129+ -->
+            <div class="card">
+              <h3 style="color: #10b981;">➕ Agregar Nuevo Perfil / Listón (Ej: Perfil 129)</h3>
+              <form onsubmit="guardarNuevoPerfilCatalogo(event)">
+                <div class="form-group">
+                  <label>Nombre y Descripción del Perfil</label>
+                  <input type="text" id="nuevoPerfilNombreInput" placeholder="Ej: Perfil 129 | 1 Liston 10x3x200" required>
+                </div>
+                <div class="form-group" style="display: flex; gap: 10px;">
+                  <div style="flex: 1;">
+                    <label>Peso Sin Cortar (Kg)</label>
+                    <input type="number" step="0.01" id="nuevoPerfilPesoO" placeholder="Ej: 3.50" required>
+                  </div>
+                  <div style="flex: 1;">
+                    <label>Peso Cortado (Kg) (Opcional)</label>
+                    <input type="number" step="0.01" id="nuevoPerfilPesoD" placeholder="Ej: 3.20">
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-success">➕ Crear Perfil en Nube</button>
+              </form>
+            </div>
+
+            <!-- NUEVO PRODUCTO TERMINADO 97+ -->
+            <div class="card">
+              <h3 style="color: #f59e0b;">🏆 Agregar Nuevo Producto Terminado (Ej: PRODUCTO TERMINADO 97)</h3>
+              <form onsubmit="guardarNuevoProductoTerminadoCatalogo(event)">
+                <div class="form-group">
+                  <label>Código / Referencia</label>
+                  <input type="text" id="nuevoPTCodigoInput" placeholder="Ej: PRODUCTO TERMINADO 97" required>
+                </div>
+                <div class="form-group">
+                  <label>Descripción Corta / Tipo</label>
+                  <input type="text" id="nuevoPTDescInput" placeholder="Ej: EPTP 100*120*15 AL" required>
+                </div>
+                <button type="submit" class="btn btn-warning" style="background: #f59e0b; color: #000; font-weight: bold;">➕ Crear Producto Terminado en Nube</button>
+              </form>
+            </div>
+
+            <!-- GESTIÓN Y EDICIÓN DE PRODUCTO TERMINADO -->
+            <div class="card">
+              <h3 style="color: #f59e0b;">🏆 Catálogo de Productos Terminados (Edición & Eliminar)</h3>
+              <input type="text" class="search-box" id="searchPTConfig" placeholder="🔍 Buscar Producto Terminado para modificar..." oninput="renderTablaPTConfig()">
+              
+              <div style="max-height: 250px; overflow-y: auto;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Descripción del Producto Terminado</th>
+                      <th>Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablaPTConfigBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- PESOS DE PERFILES -->
+            <div class="card">
+              <h3>⚖️ Configuración de Pesos Teóricos de Perfiles (Kg)</h3>
+              <input type="text" class="search-box" id="searchPerfilConfig" placeholder="🔍 Buscar perfil para modificar pesos..." oninput="renderTablaPerfilesConfig()">
+              
+              <div style="max-height: 250px; overflow-y: auto;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Perfil</th>
+                      <th style="color:#38bdf8;">Peso Sin Cortar</th>
+                      <th style="color:#10b981;">Peso Cortado</th>
+                      <th>Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tablaPerfilesConfigBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 13. EXPORTACIÓN DE DATOS ==================== -->
+      <div id="datos_raw_modulo" class="tab-content">
+        <div class="card">
+          <h2 style="color: #38bdf8;">💾 Exportación de Datos y Respaldos</h2>
+          <p style="color: var(--text-muted); margin-bottom: 20px; font-size: 0.95rem;">
+            Descarga una copia de toda la información procesada en la planta. Puedes obtener un reporte estructurado en Excel para reportes gerenciales, o un archivo de respaldo completo (JSON) del sistema.
+          </p>
+          <div style="display: flex; gap: 15px;">
+            <button class="btn btn-success" style="width: auto; font-size: 1rem; padding: 12px 20px;" onclick="exportarExcelEstructurado()">
+              📊 Descargar Excel Estructurado (Múltiples Pestañas)
+            </button>
+            <button class="btn" style="width: auto; background: #6366f1; font-size: 1rem; padding: 12px 20px;" onclick="descargarRespaldoJSON()">
+              💾 Descargar Respaldo JSON (Backup Completo)
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ==================== VENTANA FLOTANTE (MODAL) ==================== -->
   <div id="modalAjusteSeguridad" class="modal-overlay">
     <div class="modal-card">
       <h3 style="color: var(--danger); margin-bottom: 10px;">⚠️ Confirmación de Seguridad: Descontar / Borrar Stock</h3>
@@ -369,772 +1315,6 @@
           <button type="submit" class="btn btn-danger">⚠️ Confirmar y Ajustar Stock</button>
         </div>
       </form>
-    </div>
-  </div>
-
-  <div class="header-bar">
-    <div>
-      <h1>Control de Planta & Inventario en Vivo</h1>
-      <small style="color: var(--text-muted)">Materia Prima, Aglutinado 70/30, Extrusión y Kardex de Perfiles</small>
-    </div>
-    <div style="display: flex; gap: 10px; align-items: center;">
-      <div class="status-cloud">☁️ Nube Conectada</div>
-      <button class="btn btn-success no-print" onclick="window.print()" style="width: auto;">🖨️ Imprimir PDF</button>
-    </div>
-  </div>
-
-  <!-- TARJETAS DE STOCK Y MÉTRICAS -->
-  <div class="metrics-container no-print">
-    <div class="metric-card" style="border-left-color: #3b82f6;">
-      <small>Stock Materia Prima (Laminado/PP/Otros)</small>
-      <div class="metric-value" id="totalStockMP">0.0 Kg</div>
-    </div>
-    <div class="metric-card" style="border-left-color: #10b981;">
-      <small>Total Perfiles en Stock Real (Bodega 5)</small>
-      <div class="metric-value" id="totalStockPerfiles">0 Unid.</div>
-    </div>
-    <div class="metric-card" style="border-left-color: #a855f7;">
-      <small>Total Producto Terminado (Estibas/Pisos)</small>
-      <div class="metric-value" id="totalStockPT">0 Unid.</div>
-    </div>
-    <div class="metric-card" style="border-left-color: #ef4444;">
-      <small>Total Mermas de Máquinas</small>
-      <div class="metric-value" id="totalMerma">0.0 Kg</div>
-    </div>
-  </div>
-
-  <!-- NAVEGACIÓN PRINCIPAL -->
-  <div class="main-tabs no-print">
-    <button class="tab-btn active" onclick="switchMainTab(this, 'produccion_modulo')">🏭 Registro de Producción por Máquina</button>
-    <button class="tab-btn" onclick="switchMainTab(this, 'ensamble_modulo')" style="color: #f59e0b;">🔨 Ensamble (Estibas & Pisos)</button>
-    <button class="tab-btn" onclick="switchMainTab(this, 'logistica_pt_modulo')" style="color: #0284c7;">🚚 Logística & Despachos PT</button>
-    <button class="tab-btn" onclick="switchMainTab(this, 'corte_modulo')" style="color: #a855f7;">✂️ Mesa de Corte (Solo Eficiencia & Merma)</button>
-    <button class="tab-btn" onclick="switchMainTab(this, 'entradas_mp_modulo')" style="color: #38bdf8;">📥 Entradas Materia Prima (Bodega 1)</button>
-    <button class="tab-btn" onclick="switchMainTab(this, 'entradas_modulo')" style="color: #10b981;">📦 Entradas Perfiles (Bodega 5)</button>
-    <button class="tab-btn" onclick="switchMainTab(this, 'salidas_modulo')" style="color: #ef4444;">📤 Salidas Perfiles (Bodega 6)</button>
-    <button class="tab-btn" onclick="switchMainTab(this, 'movimientos_modulo')" style="color: #38bdf8;">📜 Movimientos & Registro Único</button>
-    <button class="tab-btn" onclick="switchMainTab(this, 'stock_modulo')">📊 Kardex Perfiles (128 Ref)</button>
-    <button class="tab-btn" onclick="switchMainTab(this, 'kardex_pt_modulo')" style="color: #10b981;">🏆 Kardex Producto Terminado (OP)</button>
-    <button class="tab-btn" onclick="switchMainTab(this, 'diario_modulo')">📅 Registro Diario Completo</button>
-    <button class="tab-btn" onclick="switchMainTab(this, 'config_modulo')" style="color: #f59e0b;">⚙️ Personal & Configuración</button>
-    <button class="tab-btn" onclick="switchMainTab(this, 'datos_raw_modulo')" style="color: #38bdf8;">💾 Exportar (Excel / JSON)</button>
-  </div>
-
-  <!-- ==================== 1. MÓDULO PRODUCCIÓN POR MÁQUINA ==================== -->
-  <div id="produccion_modulo" class="tab-content active">
-    <h3>Selecciona la Máquina para Registrar Producción:</h3>
-    
-    <div class="sub-tabs no-print">
-      <button class="sub-tab-btn active" onclick="switchMachineTab(this, 'ag1')">Aglutinadora 1</button>
-      <button class="sub-tab-btn" onclick="switchMachineTab(this, 'ag2')">Aglutinadora 2</button>
-      <button class="sub-tab-btn" onclick="switchMachineTab(this, 'ag3')">Aglutinadora 3</button>
-      <button class="sub-tab-btn" onclick="switchMachineTab(this, 'mol1')">Molino 1</button>
-      <button class="sub-tab-btn" onclick="switchMachineTab(this, 'mol2')">Molino 2</button>
-      <button class="sub-tab-btn" onclick="switchMachineTab(this, 'guil')">Guillotina</button>
-      <button class="sub-tab-btn" onclick="switchMachineTab(this, 'ext1')">Extrusora Principal</button>
-      <button class="sub-tab-btn" onclick="switchMachineTab(this, 'bit1')">Bitruder 1</button>
-    </div>
-
-    <div class="grid-2">
-      <div class="card form-panel">
-        <h3 id="tituloMaquinaActiva" style="color: var(--primary);">Registrar en: Aglutinadora 1</h3>
-
-        <!-- PASADOR DE ESTADO DE MÁQUINA DE PERSISTENCIA EN NUBE -->
-        <div class="machine-status-bar">
-          <span style="font-size: 0.9rem; font-weight: bold;">Estado de Operatividad:</span>
-          <button type="button" id="btnPasadorEstadoMaquina" class="toggle-status-btn activa" onclick="toggleEstadoMaquinaActual()">🟢 EN FUNCIONAMIENTO (SI)</button>
-        </div>
-        
-        <form onsubmit="guardarProduccionMaquina(event)" id="formProduccionMaquina">
-          <input type="hidden" id="editRecordId" value="">
-
-          <div class="form-group">
-            <label>Fecha de Producción</label>
-            <input type="date" id="prodFecha" onchange="recordarFechaInput(this)" required>
-          </div>
-
-          <div class="form-group">
-            <label>Horario de Turno</label>
-            <select id="prodHorarioSelect" onchange="actualizarCalculoJornada()" required>
-              <option value="6am-6pm">6am - 6pm (Día)</option>
-              <option value="6pm-6am">6pm - 6am (Noche)</option>
-              <option value="7am-5pm" selected>7am - 5pm (Día)</option>
-              <option value="7pm-5am">7pm - 5am (Noche)</option>
-              <option value="6am-4pm">6am - 4pm (Día)</option>
-              <option value="6pm-4am">6pm - 4am (Noche)</option>
-              <option value="8am-6pm">8am - 6pm (Día)</option>
-              <option value="8pm-6am">8pm - 6am (Noche)</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Jornada Calculada</label>
-            <input type="text" id="prodJornadaDisplay" readonly style="background: #1e293b; font-weight: bold; color: var(--warning); border-color: var(--warning);" value="☀️ DIA">
-          </div>
-
-          <div class="form-group">
-            <label id="lblOperario1">Operario / Trabajador Principal</label>
-            <select id="prodOperarioSelect" required></select>
-          </div>
-
-          <div class="form-group" id="grupoOperario2" style="display: none;">
-            <label style="color: #38bdf8;">👷 Operario 2 (Acompañante / Apoyo en Extrusora)</label>
-            <select id="prodOperario2Select"></select>
-          </div>
-
-          <div class="form-group" id="grupoRecetaAglutinado">
-            <label style="color: #38bdf8; font-weight: bold;">🧪 Material Consumido (Receta Aglutinado):</label>
-            <select id="prodRecetaSelect">
-              <option value="70/30">Mezcla Standard 70/30 (70% Laminado / 30% P.P)</option>
-              <option value="Laminado">Solo Laminado (100% Laminado)</option>
-              <option value="PP">Solo P.P (100% Polipropileno)</option>
-              <option value="Otros">Otros Materiales (100%)</option>
-            </select>
-          </div>
-
-          <div class="form-group" id="grupoCantidadUnica">
-            <label id="lblCantidad">Kilos Procesados / Cantidad (Kg)</label>
-            <input type="number" step="0.01" id="prodCantidad" placeholder="0.00">
-          </div>
-
-          <div class="form-group" id="grupoMultiPerfilMaquina" style="display: none;">
-            <label style="color: #10b981; font-weight: bold;" id="lblTituloMultiPerfil">📦 Perfiles Producidos Sin Cortar (Entrada Directa a Kardex):</label>
-            <div id="contenedorFilasPerfiles"></div>
-
-            <button type="button" class="btn" style="background: #6366f1; margin-top: 8px; margin-bottom: 12px;" onclick="agregarFilaPerfil()" id="btnAgregarOtroPerfilMulti">➕ Agregar otro perfil</button>
-
-            <div style="background: #0f172a; padding: 12px; border-radius: 6px; border: 1px solid var(--primary); text-align: right; margin-bottom: 15px;">
-              <small style="color: var(--text-muted)">Calculado Total de Producción Bruta:</small>
-              <div id="displayTotalKilosMulti" style="font-size: 1.3rem; font-weight: bold; color: #10b981;">0.00 Kg / 0 Unid.</div>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Merma / Desperdicio de Máquina (Kg)</label>
-            <input type="number" step="0.01" id="prodMerma" placeholder="0.00" value="0">
-          </div>
-
-          <div class="form-group">
-            <label style="color: #f59e0b; font-weight: bold;">📝 Observaciones / Novedades del Turno:</label>
-            <textarea id="prodObservacion" rows="2" placeholder="Ej: Reporte de novedades, mantenimientos o paradas..."></textarea>
-          </div>
-
-          <div style="display: flex; gap: 10px;">
-            <button type="submit" class="btn btn-success" id="btnSubmitProduccion" style="flex: 2;">⚡ Guardar Producción en la Nube</button>
-            <button type="button" class="btn btn-warning" id="btnCancelarEdicion" style="flex: 1; display: none; background: #64748b; color: white;" onclick="cancelarEdicionProduccion()">Cancelar</button>
-          </div>
-        </form>
-
-        <button type="button" class="btn btn-danger" id="btnReporteMaquinaDanada" style="display: none; font-size: 1.05rem; margin-top: 10px;" onclick="guardarReporteMaquinaDanadaExplicito()">
-          🛠️ Registrar Informe: MÁQUINA DAÑADA (0 Kilos)
-        </button>
-      </div>
-
-      <div class="card">
-        <h3>Historial Sincronizado de esta Máquina</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Fecha / Horario</th>
-              <th>Jornada</th>
-              <th>Operarios</th>
-              <th>Detalle / Receta / Observación</th>
-              <th>Cantidad</th>
-              <th>Merma</th>
-              <th>Acción</th>
-            </tr>
-          </thead>
-          <tbody id="tablaHistorialMaquinaBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== 2. MÓDULO DE ENSAMBLE ==================== -->
-  <div id="ensamble_modulo" class="tab-content">
-    <div class="grid-2">
-      <div class="card form-panel">
-        <h3 style="color: #f59e0b;">🔨 Registro de Ensamble (Estibas & Pisos Plásticos)</h3>
-        
-        <form onsubmit="guardarEnsamble(event)" id="formEnsamble">
-          <input type="hidden" id="editEnsambleId" value="">
-
-          <div class="form-group">
-            <label>Fecha de Ensamble</label>
-            <input type="date" id="ensFecha" onchange="recordarFechaInput(this)" required>
-          </div>
-
-          <div class="form-group">
-            <label>Horario de Turno</label>
-            <select id="ensHorarioSelect" required>
-              <option value="7am-5pm" selected>7am - 5pm (Día)</option>
-              <option value="6am-6pm">6am - 6pm (Día)</option>
-              <option value="6pm-6am">6pm - 6am (Noche)</option>
-              <option value="7pm-5am">7pm - 5am (Noche)</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>👷 Operario Principal 1</label>
-            <select id="ensOperario1Select" required></select>
-          </div>
-
-          <div class="form-group">
-            <label style="color: #38bdf8;">👷 Operario 2 (Apoyo / Pareja de Ensamble)</label>
-            <select id="ensOperario2Select"></select>
-          </div>
-
-          <div class="form-group">
-            <label style="color: #f59e0b; font-weight: bold;">📋 Número de Orden de Trabajo (OP):</label>
-            <input type="text" id="ensOrdenTrabajo" placeholder="Ej: YP-500, DM-100" style="text-transform: uppercase;" required>
-          </div>
-
-          <div class="form-group">
-            <label>🔍 Selecciona Producto Terminado Elaborado:</label>
-            <input type="text" class="search-box" id="searchProductoTerminado" placeholder="Buscar estiba por nombre o número..." oninput="filtrarProductoTerminadoSelect()">
-            <select id="ensProductoSelect" size="5" onchange="mostrarVistaPreviaPTEnsamble()" required></select>
-            
-            <div id="previewPTCardEnsamble" class="preview-card-box" style="display: none;">
-              <small style="color: var(--text-muted);">Descripción Completa Seleccionada:</small>
-              <div id="lblPreviewPTTextEnsamble" style="font-weight: bold; margin-top: 4px;">-</div>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Cantidad de Estibas / Pisos Elaborados (Unidades)</label>
-            <input type="number" id="ensCantRealizada" min="1" step="1" placeholder="Ej: 400" required>
-          </div>
-
-          <div class="form-group">
-            <label>Tornillos Ensamblados Utilizados (Unidades Insumo)</label>
-            <input type="number" id="ensTornillos" min="0" step="1" placeholder="Ej: 2400" required>
-          </div>
-
-          <div style="display: flex; gap: 10px;">
-            <button type="submit" class="btn btn-warning" id="btnSubmitEnsamble" style="flex: 2; background: #f59e0b; color: #000; font-weight: bold;">🔨 Registrar Ensamble & Cargar a Kardex PT</button>
-            <button type="button" class="btn" id="btnCancelarEnsamble" style="flex: 1; display: none; background: #64748b; color: white;" onclick="cancelarEdicionEnsamble()">Cancelar</button>
-          </div>
-        </form>
-      </div>
-
-      <div class="card">
-        <h3>Historial Sincronizado de Ensambles</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Fecha / Orden / Horario</th>
-              <th>Jornada</th>
-              <th>Operarios</th>
-              <th>Producto Terminado</th>
-              <th>Cant. Elaborada</th>
-              <th>Tornillos Usados</th>
-              <th>Acción</th>
-            </tr>
-          </thead>
-          <tbody id="tablaHistorialEnsambleBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== 3. MÓDULO LOGÍSTICA & DESPACHOS PRODUCTO TERMINADO ==================== -->
-  <div id="logistica_pt_modulo" class="tab-content">
-    <div class="grid-2">
-      <div class="card form-panel">
-        <h3 style="color: #0284c7;">🚚 Salida / Despacho de Producto Terminado (Logística)</h3>
-        
-        <form onsubmit="guardarDespachoPT(event)">
-          <div class="form-group">
-            <label>Fecha de Despacho</label>
-            <input type="date" id="despFecha" onchange="recordarFechaInput(this)" required>
-          </div>
-
-          <div class="form-group">
-            <label>Selecciona la Orden de Trabajo (OP) con Stock Disponible:</label>
-            <select id="despOrdenSelect" onchange="actualizarInfoOrdenSeleccionada()" required></select>
-          </div>
-
-          <div style="background: #0f172a; padding: 12px; border-radius: 6px; border: 1px solid #0284c7; margin-bottom: 15px;">
-            <small style="color: var(--text-muted);">Información del Producto a Despachar:</small>
-            <div id="lblDetalleOrdenDespacho" style="color: #38bdf8; font-weight: bold; margin-top: 4px;">Selecciona una orden...</div>
-            <div id="lblStockDisponibleOrden" style="color: #10b981; font-weight: bold; font-size: 1.1rem; margin-top: 2px;">Stock Disponible: 0 Unid.</div>
-          </div>
-
-          <div class="form-group">
-            <label>Cantidad de Unidades a Despachar / Enviar</label>
-            <input type="number" id="despCantEnviada" min="1" step="1" placeholder="Ej: 150" required>
-          </div>
-
-          <div class="form-group">
-            <label>Cliente / N° Guía de Transporte / Destino</label>
-            <input type="text" id="despClienteGuia" placeholder="Ej: Muestra Cliente X / Guía #1234" required>
-          </div>
-
-          <div class="form-group">
-            <label>Responsable de Logística / Despacho</label>
-            <select id="despResponsableSelect" required></select>
-          </div>
-
-          <button type="submit" class="btn" style="background: #0284c7;">🚚 Confirmar Despacho & Descontar del Kardex</button>
-        </form>
-      </div>
-
-      <div class="card">
-        <h3>Historial de Despachos de Producto Terminado (Logística)</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Folio N°</th>
-              <th>Fecha</th>
-              <th>Orden (OP)</th>
-              <th>Producto Terminado</th>
-              <th>Cant. Despachada</th>
-              <th>Cliente / Guía</th>
-              <th>Responsable</th>
-              <th>Acción</th>
-            </tr>
-          </thead>
-          <tbody id="tablaHistorialDespachosPTBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== 4. MÓDULO MESA DE CORTE MULTI-PERFIL (SOLO EFICIENCIA) ==================== -->
-  <div id="corte_modulo" class="tab-content">
-    <div class="grid-2">
-      <div class="card form-panel">
-        <h3 style="color: #a855f7;">✂️ Registro de Corte Multi-Perfil (Eficiencia & Merma)</h3>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">
-          📌 <em>Nota: Este módulo registra únicamente la eficiencia de corte del turno y la merma de serrín/despunte. No altera inventarios ni Kardex.</em>
-        </p>
-        
-        <form onsubmit="guardarProcesoCorteMulti(event)">
-          <div class="form-group">
-            <label>Fecha de Corte</label>
-            <input type="date" id="corteFecha" onchange="recordarFechaInput(this)" required>
-          </div>
-
-          <div class="form-group">
-            <label>Operario / Encargado de Corte</label>
-            <select id="corteOperarioSelect" required></select>
-          </div>
-
-          <label style="color: #a855f7; font-weight: bold;">✂️ Perfiles Cortados en la Jornada:</label>
-          <div id="contenedorFilasMultiCorte"></div>
-
-          <button type="button" class="btn" style="background: #6366f1; margin-top: 5px; margin-bottom: 15px;" onclick="agregarFilaCorteMulti()">➕ Agregar otro proceso de corte</button>
-
-          <div style="background: #0f172a; padding: 12px; border-radius: 6px; border: 1px solid #ef4444; margin-bottom: 15px; text-align: center;">
-            <small style="color: var(--text-muted)">Resumen de Corte Calculado:</small>
-            <div id="lblResumenTotalesCorte" style="font-size: 1.1rem; font-weight: bold; color: #38bdf8; margin-top: 3px;">Entrante: 0.00 Kg | Cortado: 0.00 Kg</div>
-            <div id="lblMermaCorteCalculada" style="font-size: 1.3rem; font-weight: bold; color: #ef4444; margin-top: 3px;">Merma Total: 0.00 Kg</div>
-          </div>
-
-          <button type="submit" class="btn btn-success" style="background: #a855f7;">✂️ Guardar Informe de Corte en la Nube</button>
-        </form>
-      </div>
-
-      <div class="card">
-        <h3>Historial de Rendimiento de Corte</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Operario</th>
-              <th>Entrada (Tira Larga)</th>
-              <th>Salida (Cortado)</th>
-              <th>Merma Generada</th>
-              <th>Acción</th>
-            </tr>
-          </thead>
-          <tbody id="tablaHistorialCorteBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== 5. MÓDULO ENTRADAS DE MATERIA PRIMA ==================== -->
-  <div id="entradas_mp_modulo" class="tab-content">
-    <div class="grid-2">
-      <div class="card form-panel">
-        <h3 style="color: #38bdf8;">📥 Recepción de Materia Prima (Bodega 1)</h3>
-        <form onsubmit="guardarEntradaMP(event)" id="formMateriaPrima">
-          <div class="form-group">
-            <label>Fecha de Recepción</label>
-            <input type="date" id="mpFecha" onchange="recordarFechaInput(this)" required>
-          </div>
-          <div class="form-group">
-            <label>Tipo de Material Ingresado</label>
-            <select id="mpTipoSelect" required>
-              <option value="Laminado">Material Laminado (Kilos)</option>
-              <option value="P.P">Material P.P (Polipropileno) (Kilos)</option>
-              <option value="Otros">Otros Materiales (Kilos)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Cantidad Ingresada (Kilos)</label>
-            <input type="number" step="0.01" id="mpCantidad" placeholder="Ej: 10000.00" required>
-          </div>
-          <div class="form-group">
-            <label>Responsable de Recepción</label>
-            <select id="mpResponsableSelect" required></select>
-          </div>
-          <button type="submit" class="btn" style="background: #0284c7;">➕ Cargar Materia Prima a Nube</button>
-        </form>
-      </div>
-
-      <div class="card">
-        <h3>Resumen de Inventario de Materia Prima Bruta</h3>
-        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-          <div style="background: #0f172a; padding: 10px; border-radius: 6px; flex: 1; border-left: 3px solid #38bdf8;">
-            <small>Material Laminado</small>
-            <div id="stockLaminadoVal" style="font-size: 1.2rem; font-weight: bold; color: #38bdf8;">0.0 Kg</div>
-          </div>
-          <div style="background: #0f172a; padding: 10px; border-radius: 6px; flex: 1; border-left: 3px solid #a855f7;">
-            <small>Material P.P</small>
-            <div id="stockPPVal" style="font-size: 1.2rem; font-weight: bold; color: #a855f7;">0.0 Kg</div>
-          </div>
-          <div style="background: #0f172a; padding: 10px; border-radius: 6px; flex: 1; border-left: 3px solid #f59e0b;">
-            <small>Otros Materiales</small>
-            <div id="stockOtrosVal" style="font-size: 1.2rem; font-weight: bold; color: #f59e0b;">0.0 Kg</div>
-          </div>
-        </div>
-
-        <h3>Historial de Entradas de Materia Prima</h3>
-        <table>
-          <thead>
-            <tr><th>Fecha</th><th>Material</th><th>Kilos Ingresados</th><th>Responsable</th><th>Acción</th></tr>
-          </thead>
-          <tbody id="tablaEntradasMPBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== 6. MÓDULO ENTRADAS DE PERFILES ==================== -->
-  <div id="entradas_modulo" class="tab-content">
-    <div class="grid-2">
-      <div class="card form-panel">
-        <h3 style="color: #10b981;">📦 Ingreso de Perfiles Especiales (Bodega 5)</h3>
-        <form onsubmit="guardarEntradaStock(event)">
-          <div class="form-group">
-            <label>Fecha de Ingreso</label>
-            <input type="date" id="entradaFecha" onchange="recordarFechaInput(this)" required>
-          </div>
-          <div class="form-group">
-            <label>Tipo de Entrada</label>
-            <select id="entradaTipo">
-              <option value="Carga Inicial de Stock">Carga Inicial de Stock</option>
-              <option value="Reingreso / Devolución">Reingreso / Devolución de Cliente</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>🔍 Buscar Perfil:</label>
-            <input type="text" class="search-box" id="searchEntradaRef" placeholder="Ej: 82, Durmiente..." oninput="filtrarPerfiles('searchEntradaRef', 'entradaRefSelect')">
-            <select id="entradaRefSelect" size="4" required></select>
-          </div>
-          <div class="form-group">
-            <label>Cantidad de Unidades Ingresadas</label>
-            <input type="number" id="entradaCantidad" placeholder="0" required>
-          </div>
-          <div class="form-group">
-            <label>Responsable de Recepción</label>
-            <select id="entradaResponsableSelect" required></select>
-          </div>
-          <button type="submit" class="btn btn-success">➕ Registrar Entrada de Perfiles</button>
-        </form>
-      </div>
-
-      <div class="card">
-        <h3>Historial de Entradas a Inventario de Perfiles</h3>
-        <table>
-          <thead>
-            <tr><th>Fecha</th><th>Tipo</th><th>Perfil</th><th>Cant.</th><th>Responsable</th><th>Acción</th></tr>
-          </thead>
-          <tbody id="tablaEntradasBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== 7. MÓDULO SALIDAS / DESPACHOS ==================== -->
-  <div id="salidas_modulo" class="tab-content">
-    <div class="grid-2">
-      <div class="card form-panel">
-        <h3 style="color: #ef4444;">📤 Salida de Perfiles / Despacho (Bodega 6)</h3>
-        <form onsubmit="guardarSalidaStock(event)">
-          <div class="form-group">
-            <label>Fecha de Salida</label>
-            <input type="date" id="salidaFecha" onchange="recordarFechaInput(this)" required>
-          </div>
-          <div class="form-group">
-            <label>Motivo de Salida</label>
-            <select id="salidaTipo">
-              <option value="Despacho / Venta a Cliente">Despacho / Venta a Cliente</option>
-              <option value="Baja: Producto Dañado / Mala Calidad">Baja: Producto Dañado / Mala Calidad</option>
-              <option value="Muestra / Mantenimiento">Muestra Técnica / Mantenimiento</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>🔍 Buscar Perfil:</label>
-            <input type="text" class="search-box" id="searchSalidaRef" placeholder="Ej: 82, Durmiente..." oninput="filtrarPerfiles('searchSalidaRef', 'salidaRefSelect')">
-            <select id="salidaRefSelect" size="4" required></select>
-          </div>
-          <div class="form-group">
-            <label>Cantidad de Unidades Retiradas</label>
-            <input type="number" id="salidaCantidad" placeholder="0" required>
-          </div>
-          <div class="form-group">
-            <label>Responsable de Despacho</label>
-            <select id="salidaResponsableSelect" required></select>
-          </div>
-          <button type="submit" class="btn btn-danger">➖ Registrar Salida de Stock</button>
-        </form>
-      </div>
-
-      <div class="card">
-        <h3>Historial de Salidas y Despachos</h3>
-        <table>
-          <thead>
-            <tr><th>Fecha</th><th>Motivo</th><th>Perfil</th><th>Cant.</th><th>Responsable</th><th>Acción</th></tr>
-          </thead>
-          <tbody id="tablaSalidasBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== 8. MOVIMIENTOS Y REGISTRO ÚNICO ==================== -->
-  <div id="movimientos_modulo" class="tab-content">
-    <div class="card">
-      <h2 style="color: #38bdf8;">📜 Libro Unificado de Movimientos de Bodega (Kardex Audit)</h2>
-      <div class="grid-2" style="grid-template-columns: 2fr 1fr; margin-bottom: 15px;">
-        <input type="text" class="search-box" id="searchMovimientos" placeholder="🔍 Buscar por Folio, Perfil, Motivo o Responsable..." oninput="renderModuloMovimientos()">
-        <select id="filterTipoMovimiento" onchange="renderModuloMovimientos()">
-          <option value="todos">Todos los Movimientos (Entradas y Salidas)</option>
-          <option value="ENTRADA">Solo ENTRADAS (➕)</option>
-          <option value="SALIDA">Solo SALIDAS (➖)</option>
-        </select>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Folio N°</th>
-            <th>Fecha</th>
-            <th>Tipo</th>
-            <th>Perfil / Referencia</th>
-            <th>Cant. Unid.</th>
-            <th>Motivo / Origen</th>
-            <th>Responsable</th>
-            <th>Acción</th>
-          </tr>
-        </thead>
-        <tbody id="tablaMovimientosBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- ==================== 9. KARDEX PERFILES ==================== -->
-  <div id="stock_modulo" class="tab-content">
-    <div class="card">
-      <h2>Stock Real de Perfiles (Kardex de 128 Referencias)</h2>
-      <div class="grid-2" style="grid-template-columns: 2fr 1fr; margin-bottom: 15px;">
-        <input type="text" class="search-box" id="searchKardex" placeholder="🔍 Buscar por número de perfil o nombre..." oninput="renderKardex()">
-        <select id="filterStockStatus" onchange="renderKardex()">
-          <option value="todos">Mostrar los 128 Perfiles</option>
-          <option value="con_stock">Solo perfiles CON STOCK (>0)</option>
-          <option value="sin_stock">Solo perfiles SIN STOCK (=0)</option>
-        </select>
-      </div>
-
-      <table>
-        <thead>
-          <tr>
-            <th>N° Referencia y Descripción del Perfil</th>
-            <th style="color: #10b981;">➕ Entradas (Bodega 5)</th>
-            <th style="color: #ef4444;">➖ Salidas (Bodega 6)</th>
-            <th>📦 Stock Actual Real</th>
-            <th>Ajuste / Borrado Seguro</th>
-          </tr>
-        </thead>
-        <tbody id="tablaKardexBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- ==================== 10. KARDEX PRODUCTO TERMINADO (ESTIBAS / OP) ==================== -->
-  <div id="kardex_pt_modulo" class="tab-content">
-    <div class="card">
-      <h2 style="color: #10b981;">🏆 Kardex de Producto Terminado (Estibas & Ordenes de Trabajo)</h2>
-      <input type="text" class="search-box" id="searchKardexPT" placeholder="🔍 Buscar por N° de Orden (Ej: YP-500) o Producto Terminado..." oninput="renderKardexPT()">
-
-      <table>
-        <thead>
-          <tr>
-            <th>N° Orden de Trabajo (OP)</th>
-            <th>Producto Terminado (Estiba / Piso)</th>
-            <th style="color: #10b981;">🔨 Fabricadas (Ensamble)</th>
-            <th style="color: #f59e0b;">🚚 Despachadas (Logística)</th>
-            <th>📦 Stock Actual Disponible</th>
-          </tr>
-        </thead>
-        <tbody id="tablaKardexPTBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- ==================== 11. REGISTRO DIARIO COMPLETO ESTRUCTURADO ==================== -->
-  <div id="diario_modulo" class="tab-content">
-    <div class="card">
-      <h2>Consolidado General de Planta por Día y Jornada</h2>
-      
-      <div style="display: flex; gap: 20px; margin-bottom: 20px; background: #0f172a; padding: 15px; border-radius: 6px;" class="no-print">
-        <div style="flex: 1;">
-          <label>Fecha a Consultar:</label>
-          <input type="date" id="filterFechaDiaria" onchange="renderProduccionDiaria()">
-        </div>
-        <div style="flex: 1;">
-          <label>Filtrar por Jornada:</label>
-          <select id="filterTurnoDiario" onchange="renderProduccionDiaria()">
-            <option value="todos">Todas las Jornadas (Día y Noche)</option>
-            <option value="DIA">Solo Jornada Día (☀️)</option>
-            <option value="NOCHE">Solo Jornada Noche (🌙)</option>
-          </select>
-        </div>
-      </div>
-
-      <div id="contenedorDiarioEstructurado"></div>
-    </div>
-  </div>
-
-  <!-- ==================== 12. CONFIGURACIÓN Y PERSONAL ==================== -->
-  <div id="config_modulo" class="tab-content">
-    <div class="grid-2">
-      <!-- PLANTILLA DE PERSONAL -->
-      <div class="card">
-        <h3>👷 Plantilla de Personal (Nube)</h3>
-        <p id="resumenNumTrabajadores" style="color: #10b981; font-weight: bold; font-size: 1.2rem;">Cargando...</p>
-
-        <button class="btn" style="background: #6366f1; width: 100%; margin-bottom: 15px;" onclick="restaurarListaOficial()">🔄 Cargar Lista Oficial en Nube</button>
-        
-        <form onsubmit="guardarNuevoTrabajador(event)" style="margin-bottom: 20px;">
-          <div class="form-group">
-            <label>Agregar Nuevo Trabajador</label>
-            <input type="text" id="nuevoTrabajadorInput" placeholder="Ej: PEREZ ALVAREZ CARLOS" required>
-          </div>
-          <button type="submit" class="btn btn-success">➕ Agregar Trabajador</button>
-        </form>
-
-        <table>
-          <thead>
-            <tr><th>N°</th><th>Nombre Completo</th><th>Acción</th></tr>
-          </thead>
-          <tbody id="tablaTrabajadoresBody"></tbody>
-        </table>
-      </div>
-
-      <!-- AGREGAR NUEVO PERFIL Y NUEVO PRODUCTO TERMINADO -->
-      <div>
-        <!-- NUEVO PERFIL 129+ -->
-        <div class="card">
-          <h3 style="color: #10b981;">➕ Agregar Nuevo Perfil / Listón (Ej: Perfil 129)</h3>
-          <form onsubmit="guardarNuevoPerfilCatalogo(event)">
-            <div class="form-group">
-              <label>Nombre y Descripción del Perfil</label>
-              <input type="text" id="nuevoPerfilNombreInput" placeholder="Ej: Perfil 129 | 1 Liston 10x3x200" required>
-            </div>
-            <div class="form-group" style="display: flex; gap: 10px;">
-              <div style="flex: 1;">
-                <label>Peso Sin Cortar (Kg)</label>
-                <input type="number" step="0.01" id="nuevoPerfilPesoO" placeholder="Ej: 3.50" required>
-              </div>
-              <div style="flex: 1;">
-                <label>Peso Cortado (Kg) (Opcional)</label>
-                <input type="number" step="0.01" id="nuevoPerfilPesoD" placeholder="Ej: 3.20">
-              </div>
-            </div>
-            <button type="submit" class="btn btn-success">➕ Crear Perfil en Nube</button>
-          </form>
-        </div>
-
-        <!-- NUEVO PRODUCTO TERMINADO 97+ -->
-        <div class="card">
-          <h3 style="color: #f59e0b;">🏆 Agregar Nuevo Producto Terminado (Ej: PRODUCTO TERMINADO 97)</h3>
-          <form onsubmit="guardarNuevoProductoTerminadoCatalogo(event)">
-            <div class="form-group">
-              <label>Código / Referencia</label>
-              <input type="text" id="nuevoPTCodigoInput" placeholder="Ej: PRODUCTO TERMINADO 97" required>
-            </div>
-            <div class="form-group">
-              <label>Descripción Corta / Tipo</label>
-              <input type="text" id="nuevoPTDescInput" placeholder="Ej: EPTP 100*120*15 AL" required>
-            </div>
-            <button type="submit" class="btn btn-warning" style="background: #f59e0b; color: #000; font-weight: bold;">➕ Crear Producto Terminado en Nube</button>
-          </form>
-        </div>
-
-        <!-- GESTIÓN Y EDICIÓN DE PRODUCTO TERMINADO -->
-        <div class="card">
-          <h3 style="color: #f59e0b;">🏆 Catálogo de Productos Terminados (Edición & Eliminar)</h3>
-          <input type="text" class="search-box" id="searchPTConfig" placeholder="🔍 Buscar Producto Terminado para modificar..." oninput="renderTablaPTConfig()">
-          
-          <div style="max-height: 250px; overflow-y: auto;">
-            <table>
-              <thead>
-                <tr>
-                  <th>Descripción del Producto Terminado</th>
-                  <th>Acción</th>
-                </tr>
-              </thead>
-              <tbody id="tablaPTConfigBody"></tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- PESOS DE PERFILES -->
-        <div class="card">
-          <h3>⚖️ Configuración de Pesos Teóricos de Perfiles (Kg)</h3>
-          <input type="text" class="search-box" id="searchPerfilConfig" placeholder="🔍 Buscar perfil para modificar pesos..." oninput="renderTablaPerfilesConfig()">
-          
-          <div style="max-height: 250px; overflow-y: auto;">
-            <table>
-              <thead>
-                <tr>
-                  <th>Perfil</th>
-                  <th style="color:#38bdf8;">Peso Sin Cortar</th>
-                  <th style="color:#10b981;">Peso Cortado</th>
-                  <th>Acción</th>
-                </tr>
-              </thead>
-              <tbody id="tablaPerfilesConfigBody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ==================== 13. EXPORTACIÓN RAW ==================== -->
-  <div id="datos_raw_modulo" class="tab-content">
-    <div class="card">
-      <h2>💾 Exportación de Datos</h2>
-      <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-        <button class="btn btn-success" style="width: auto;" onclick="exportarExcelCSV()">📊 Exportar a Excel (CSV)</button>
-        <button class="btn" style="width: auto; background: #6366f1;" onclick="descargarRespaldoJSON()">💾 Descargar JSON Backup</button>
-      </div>
-
-      <div class="grid-2">
-        <div>
-          <h4>📜 JSON Producción</h4>
-          <div class="json-preview" id="jsonProduccionPreview">[]</div>
-        </div>
-        <div>
-          <h4>📥 JSON Entradas Materia Prima</h4>
-          <div class="json-preview" id="jsonMPPreview">[]</div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -1393,6 +1573,20 @@
 
     function generarFolioMovimiento() {
       return 'MOV-' + Math.floor(1000 + Math.random() * 9000);
+    }
+
+    // ACCIONAR ACORDEÓN DE LA BARRA LATERAL
+    function toggleSidebarGroup(btn) {
+      const group = btn.parentElement;
+      group.classList.toggle('active');
+    }
+
+    function switchMainTab(btnEl, tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.sidebar-item-btn').forEach(el => el.classList.remove('active'));
+      const t = document.getElementById(tabId);
+      if (t) t.classList.add('active');
+      if (btnEl) btnEl.classList.add('active');
     }
 
     // ESCUCHAR ESTADOS DE MÁQUINAS EN LA NUBE
@@ -2363,11 +2557,12 @@
       document.getElementById('totalStockPT').textContent = `${stockGlobalPT} Unid.`;
     }
 
-    // RENDER DEL MÓDULO UNIFICADO DE MOVIMIENTOS
+    // RENDER DEL MÓDULO UNIFICADO DE MOVIMIENTOS (CON COLORES Y FECHA)
     function renderModuloMovimientos() {
       const tbody = document.getElementById('tablaMovimientosBody');
       const busqueda = (document.getElementById('searchMovimientos')?.value || '').toLowerCase().trim();
       const filtroTipo = document.getElementById('filterTipoMovimiento')?.value || 'todos';
+      const filtroFecha = document.getElementById('filterFechaMovimientos')?.value || '';
 
       if (!tbody) return;
       tbody.innerHTML = '';
@@ -2384,7 +2579,9 @@
         const folioStr = m.folio || `MOV-${(copia.length - idx).toString().padStart(4, '0')}`;
         const esEntrada = m.tipo === 'ENTRADA';
 
+        // FILTROS
         if (filtroTipo !== 'todos' && m.tipo !== filtroTipo) return;
+        if (filtroFecha && m.fecha !== filtroFecha) return;
 
         if (busqueda) {
           const matchFolio = folioStr.toLowerCase().includes(busqueda);
@@ -2392,6 +2589,18 @@
           const matchMotivo = (m.motivo || '').toLowerCase().includes(busqueda);
           const matchResp = (m.responsable || '').toLowerCase().includes(busqueda);
           if (!matchFolio && !matchRef && !matchMotivo && !matchResp) return;
+        }
+
+        // LÓGICA DE COLORES POR ORIGEN
+        let colorMotivo = 'var(--text-muted)';
+        const motivoLower = (m.motivo || '').toLowerCase();
+        
+        if (motivoLower.includes('extrusora') || motivoLower.includes('bitruder')) {
+          colorMotivo = '#a855f7'; // Morado (Producción)
+        } else if (motivoLower.includes('recepción') || motivoLower.includes('carga') || motivoLower.includes('materia prima')) {
+          colorMotivo = '#38bdf8'; // Azul claro (Insumos)
+        } else if (motivoLower.includes('despacho') || motivoLower.includes('baja') || motivoLower.includes('dañado')) {
+          colorMotivo = '#f59e0b'; // Naranja (Salidas o Defectos)
         }
 
         tbody.innerHTML += `
@@ -2409,7 +2618,7 @@
                 ${esEntrada ? '+' : '-'}${m.cantidad || 0}
               </strong>
             </td>
-            <td><small style="color: var(--text-muted);">${m.motivo || ''}</small></td>
+            <td><small style="color: ${colorMotivo}; font-weight: bold;">${m.motivo || ''}</small></td>
             <td><small>${m.responsable || ''}</small></td>
             <td>
               <button class="btn btn-danger btn-sm" onclick="borrarMovimientoSeguro('${m.id}', '${folioStr}')">🗑️ Borrar</button>
@@ -2533,7 +2742,7 @@
       document.getElementById('btnSubmitProduccion').textContent = "💾 Actualizar Registro en la Nube";
       document.getElementById('btnCancelarEdicion').style.display = "block";
       
-      const mainBtn = document.querySelector('.tab-btn[onclick*="produccion_modulo"]');
+      const mainBtn = document.querySelector('.sidebar-item-btn[onclick*="produccion_modulo"]');
       if (mainBtn) switchMainTab(mainBtn, 'produccion_modulo');
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -3218,44 +3427,6 @@
       }
     }
 
-    function switchMainTab(btnEl, tabId) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.main-tabs .tab-btn').forEach(el => el.classList.remove('active'));
-      const t = document.getElementById(tabId);
-      if (t) t.classList.add('active');
-      if (btnEl) btnEl.classList.add('active');
-    }
-
-    function switchMachineTab(btnEl, key) {
-      document.querySelectorAll('.sub-tab-btn').forEach(el => el.classList.remove('active'));
-      if (btnEl) btnEl.classList.add('active');
-
-      const config = MAQUINAS_MAP[key] || MAQUINAS_MAP['ag1'];
-      maquinaActualKey = config.nombre;
-
-      maquinaActivaOperativa = dbEstadoMaquinasNube[maquinaActualKey] !== undefined ? dbEstadoMaquinasNube[maquinaActualKey] : true;
-      actualizarInterfazEstadoMaquina();
-
-      document.getElementById('tituloMaquinaActiva').textContent = `Registrar en: ${config.nombre}`;
-      document.getElementById('lblCantidad').textContent = `Cantidad Producida (${config.unidad})`;
-
-      document.getElementById('lblOperario1').textContent = config.admiteDosOperarios ? 'Operario 1 (Principal)' : 'Operario / Trabajador';
-      document.getElementById('grupoOperario2').style.display = config.admiteDosOperarios ? 'block' : 'none';
-
-      document.getElementById('grupoRecetaAglutinado').style.display = config.esAglutinado ? 'block' : 'none';
-      
-      if (config.llevaPerfil) {
-        document.getElementById('grupoCantidadUnica').style.display = 'none';
-        document.getElementById('grupoMultiPerfilMaquina').style.display = 'block';
-        reiniciarFilasPerfiles();
-      } else {
-        document.getElementById('grupoCantidadUnica').style.display = 'block';
-        document.getElementById('grupoMultiPerfilMaquina').style.display = 'none';
-      }
-
-      renderHistorialMaquinaActual();
-    }
-
     function renderizarTodo() {
       let sumMerma = 0;
       registrosProduccion.forEach(r => {
@@ -3278,7 +3449,6 @@
       renderTablaDespachosPT();
       actualizarSelectOrdenesLogistica();
       renderKardexPT();
-      renderVisorRaw();
     }
 
     function cargarSelectPerfiles(selectId, filtro = "") {
@@ -3306,13 +3476,6 @@
       }
     }
 
-    function renderVisorRaw() {
-      const p1 = document.getElementById('jsonProduccionPreview');
-      const p2 = document.getElementById('jsonMPPreview');
-      if (p1) p1.textContent = JSON.stringify(registrosProduccion, null, 2);
-      if (p2) p2.textContent = JSON.stringify(registrosMP, null, 2);
-    }
-
     function descargarRespaldoJSON() {
       const dataFull = { fecha: new Date().toISOString(), registrosProduccion, registrosMP, registrosMovimientos, registrosCorte, registrosEnsamble, registrosDespachosPT, listaTrabajadores };
       const blob = new Blob([JSON.stringify(dataFull, null, 2)], { type: 'application/json' });
@@ -3322,17 +3485,76 @@
       a.click();
     }
 
-    function exportarExcelCSV() {
-      if (registrosProduccion.length === 0) { alert("Sin datos para exportar."); return; }
-      let csv = 'ID,Fecha,Horario,Jornada,Maquina,Operario,Operario2,Receta,Referencia,Unidades,Cantidad_Kg,Merma_Kg,Observacion\n';
-      registrosProduccion.forEach(r => {
-        csv += `"${r.id}","${r.fecha}","${r.horario}","${r.jornada}","${r.maquina}","${r.operario1 || r.operario}","${r.operario2 || ''}","${r.receta}","${r.referencia}",${r.unidades || 0},${r.cantidad},${r.merma},"${r.observacion || ''}"\n`;
-      });
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `produccion_planta_${new Date().toISOString().split('T')[0]}.csv`;
-      a.click();
+    // ==================== NUEVA EXPORTACIÓN A EXCEL (.XLSX) ====================
+    function exportarExcelEstructurado() {
+      if (registrosProduccion.length === 0 && registrosEnsamble.length === 0 && registrosCorte.length === 0 && registrosMovimientos.length === 0) { 
+        alert("No hay datos registrados en la nube para exportar."); 
+        return; 
+      }
+
+      // 1. Hoja 1: PRODUCCIÓN
+      const dataProduccion = registrosProduccion.map(r => ({
+        "Fecha": r.fecha, "Horario": r.horario, "Jornada": r.jornada, "Máquina": r.maquina,
+        "Operario(s)": r.operario, "Detalle / Referencia": r.receta !== 'N/A' ? r.receta : r.referencia,
+        "Unidades Producidas": r.unidades || 0, "Kilos Producidos": parseFloat((r.cantidad || 0).toFixed(2)),
+        "Merma Generada (Kg)": parseFloat((r.merma || 0).toFixed(2)), "Observación": r.observacion || ''
+      }));
+
+      // 2. Hoja 2: ENSAMBLE
+      const dataEnsamble = registrosEnsamble.map(e => ({
+        "Fecha": e.fecha, "Horario": e.horario, "Jornada": e.jornada || 'DIA',
+        "Orden de Trabajo (OP)": e.ordenTrabajo, "Producto Terminado": e.productoTerminado,
+        "Operario(s)": e.operario, "Cant. Fabricada (Unid)": e.cantRealizada || 0, "Tornillos Usados": e.tornillos || 0
+      }));
+
+      // 3. Hoja 3: LOGÍSTICA
+      const dataDespachos = registrosDespachosPT.map(d => ({
+        "Fecha": d.fecha, "Folio Salida": d.folio, "Orden de Trabajo (OP)": d.ordenTrabajo,
+        "Producto Terminado": d.productoTerminado, "Cant. Despachada (Unid)": d.cantEnviada || 0,
+        "Cliente / Guía": d.clienteGuia || '', "Responsable de Despacho": d.responsable || ''
+      }));
+
+      // 4. Hoja 4: MESA DE CORTE
+      const dataCorte = registrosCorte.map(c => ({
+        "Fecha": c.fecha, "Operario": c.operario, "Perfil Entrante": c.perfilOrigen, "Unidades Entrantes": c.cantOrigen,
+        "Perfil Cortado": c.perfilDestino, "Unidades Cortadas": c.cantDestino, "Merma de Corte (Kg)": parseFloat((c.mermaCorte || 0).toFixed(2))
+      }));
+
+      // 5. Hoja 5: LIBRO UNIFICADO DE MOVIMIENTOS
+      const dataMovimientos = registrosMovimientos.map(m => ({
+        "Folio N°": m.folio || '',
+        "Fecha": m.fecha || '',
+        "Tipo Movimiento": m.tipo || '',
+        "Referencia / Producto": m.referencia || '',
+        "Cantidad": parseFloat(m.cantidad || 0),
+        "Motivo / Origen": m.motivo || '',
+        "Responsable": m.responsable || ''
+      }));
+
+      // Inicializar Libro
+      const wb = XLSX.utils.book_new();
+
+      // Convertir a hojas
+      const wsProd = XLSX.utils.json_to_sheet(dataProduccion);
+      const wsEns = XLSX.utils.json_to_sheet(dataEnsamble);
+      const wsDesp = XLSX.utils.json_to_sheet(dataDespachos);
+      const wsCorte = XLSX.utils.json_to_sheet(dataCorte);
+      const wsMovs = XLSX.utils.json_to_sheet(dataMovimientos);
+
+      // Ancho automático hoja producción
+      wsProd['!cols'] = [{wch:12}, {wch:12}, {wch:10}, {wch:18}, {wch:25}, {wch:35}, {wch:18}, {wch:15}, {wch:18}, {wch:40}];
+      wsMovs['!cols'] = [{wch:15}, {wch:12}, {wch:15}, {wch:35}, {wch:10}, {wch:30}, {wch:35}];
+
+      // Adjuntar hojas
+      XLSX.utils.book_append_sheet(wb, wsProd, "Producción y Máquinas");
+      XLSX.utils.book_append_sheet(wb, wsEns, "Ensamble de Estibas");
+      XLSX.utils.book_append_sheet(wb, wsDesp, "Logística y Despachos");
+      XLSX.utils.book_append_sheet(wb, wsCorte, "Rendimiento Corte");
+      XLSX.utils.book_append_sheet(wb, wsMovs, "Libro de Movimientos"); 
+
+      // Descargar
+      const fechaHoy = new Date().toISOString().split('T')[0];
+      XLSX.writeFile(wb, `Reporte_General_Planta_${fechaHoy}.xlsx`);
     }
 
     // ARRANQUE
@@ -3346,6 +3568,7 @@
       if (document.getElementById('entradaFecha')) document.getElementById('entradaFecha').value = hoy;
       if (document.getElementById('salidaFecha')) document.getElementById('salidaFecha').value = hoy;
       if (document.getElementById('filterFechaDiaria')) document.getElementById('filterFechaDiaria').value = hoy;
+      if (document.getElementById('filterFechaMovimientos')) document.getElementById('filterFechaMovimientos').value = hoy; // Inicializa filtro de movimientos a hoy
 
       actualizarCalculoJornada();
       
