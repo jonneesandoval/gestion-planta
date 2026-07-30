@@ -1426,7 +1426,7 @@
       renderKardexPT();
     });
 
-    // ESCUCHAR PERFILES Y PESOS EN LA NUBE (Y RENDERIZAR KARDEX AL CARGAR)
+    // ESCUCHAR PERFILES Y PESOS EN LA NUBE
     db.collection('perfiles').onSnapshot(snapshot => {
       dbPerfilesNube = [];
       snapshot.forEach(doc => {
@@ -1445,7 +1445,7 @@
 
       renderTablaPerfilesConfig();
       cargarSelectsPagina();
-      renderKardex(); // RENDERIZAR KARDEX INMEDIATAMENTE
+      renderKardex();
     });
 
     // ESCUCHAR TRABAJADORES EN TIEMPO REAL
@@ -2088,7 +2088,7 @@
       });
     }
 
-    // REGISTRO DE MATERIA PRIMA EN LA NUBE Y EN MOVIMIENTOS
+    // REGISTRO DE MATERIA PRIMA EN LA NUBE (CORREGIDO CON ESTANDARIZACIÓN EXACTA)
     function guardarEntradaMP(e) {
       e.preventDefault();
       const fch = document.getElementById('mpFecha').value;
@@ -2103,7 +2103,6 @@
         responsable: resp,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       }).then(() => {
-        // Registrar también en movimientos para auditoría general
         db.collection('movimientos').add({
           folio: generarFolioMovimiento(),
           tipo: 'ENTRADA',
@@ -2630,58 +2629,6 @@
           </tr>
         `;
       });
-    }
-
-    // RENDER KARDEX PERFILES SEGURO
-    function renderKardex() {
-      const busqueda = (document.getElementById('searchKardex')?.value || '').toLowerCase().trim();
-      const filtroStatus = document.getElementById('filterStockStatus')?.value || 'todos';
-      const tbody = document.getElementById('tablaKardexBody');
-      if (!tbody) return;
-      tbody.innerHTML = '';
-
-      const mapStock = {};
-      DB_PERFILES.forEach(p => mapStock[p] = { entradas: 0, salidas: 0 });
-
-      registrosMovimientos.forEach(m => {
-        if (m.referencia && mapStock[m.referencia]) {
-          if (m.tipo === 'ENTRADA') mapStock[m.referencia].entradas += (m.cantidad || 0);
-          else if (m.tipo === 'SALIDA') mapStock[m.referencia].salidas += (m.cantidad || 0);
-        }
-      });
-
-      let totalStockGlobal = 0;
-
-      DB_PERFILES.forEach(perfil => {
-        const data = mapStock[perfil];
-        const stockReal = data.entradas - data.salidas;
-        totalStockGlobal += stockReal;
-
-        if (busqueda && !perfil.toLowerCase().includes(busqueda)) return;
-        if (filtroStatus === 'con_stock' && stockReal <= 0) return;
-        if (filtroStatus === 'sin_stock' && stockReal > 0) return;
-
-        const pEscaped = perfil.replace(/'/g, "\\'");
-
-        tbody.innerHTML += `
-          <tr>
-            <td><strong>${perfil}</strong></td>
-            <td style="color: #10b981;">+ ${data.entradas}</td>
-            <td style="color: #ef4444;">- ${data.salidas}</td>
-            <td>
-              <span class="badge badge-stock" style="${stockReal < 0 ? 'background:rgba(239,68,68,0.2); color:#ef4444;' : ''}">
-                ${stockReal} Unid.
-              </span>
-            </td>
-            <td>
-              <button class="btn btn-danger btn-sm" onclick="abrirModalAjuste('${pEscaped}', ${stockReal})">🗑️ Descontar / Borrar</button>
-            </td>
-          </tr>
-        `;
-      });
-
-      const txtStock = document.getElementById('totalStockPerfiles');
-      if (txtStock) txtStock.textContent = `${totalStockGlobal} Unid.`;
     }
 
     // REGISTRO DIARIO COMPLETO CON TOTALES Y SUBTOTALES POR TURNO
