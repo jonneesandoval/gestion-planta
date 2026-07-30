@@ -2093,11 +2093,11 @@
       });
     }
 
-    // REGISTRO DE MATERIA PRIMA (CORREGIDO CON ID DE FORMULARIO AISLADO)
+    // REGISTRO DE MATERIA PRIMA (CORREGIDO CON ESTANDARIZACIÓN Y LECTURA ROBUSTA)
     function guardarEntradaMP(e) {
       e.preventDefault();
       const fch = document.getElementById('mpFecha').value;
-      const tipoMat = document.getElementById('mpTipoSelect').value; // 'Laminado', 'P.P', 'Otros'
+      const tipoMat = document.getElementById('mpTipoSelect').value;
       const cant = parseFloat(document.getElementById('mpCantidad').value) || 0;
       const resp = document.getElementById('mpResponsableSelect').value;
 
@@ -2129,6 +2129,57 @@
       }).catch(err => {
         alert("Error al guardar en la nube: " + err.message);
       });
+    }
+
+    function calcularStockMateriaPrima() {
+      let stockLaminado = 0, stockPP = 0, stockOtros = 0;
+
+      // 1. Sumar desde la colección materia_prima
+      registrosMP.forEach(m => {
+        const mat = (m.material || '').toLowerCase();
+        const cant = parseFloat(m.cantidad) || 0;
+        if (mat.includes('laminado')) stockLaminado += cant;
+        else if (mat.includes('p.p') || mat.includes('pp')) stockPP += cant;
+        else stockOtros += cant;
+      });
+
+      // 2. Sumar también si hay registros en la colección de movimientos
+      registrosMovimientos.forEach(m => {
+        if (m.referencia && m.referencia.includes('MATERIA PRIMA') && m.tipo === 'ENTRADA') {
+          const ref = m.referencia.toLowerCase();
+          const cant = parseFloat(m.cantidad) || 0;
+          if (ref.includes('laminado') && registrosMP.length === 0) stockLaminado += cant;
+          else if ((ref.includes('p.p') || ref.includes('pp')) && registrosMP.length === 0) stockPP += cant;
+          else if (registrosMP.length === 0) stockOtros += cant;
+        }
+      });
+
+      // 3. Descontar consumo de aglutinadoras
+      registrosProduccion.forEach(p => {
+        if (p.maquina && p.maquina.includes('Aglutinadora')) {
+          const kgsTotal = (p.cantidad || 0) + (p.merma || 0);
+          if (p.receta === '70/30') {
+            stockLaminado -= (kgsTotal * 0.70);
+            stockPP -= (kgsTotal * 0.30);
+          } else if (p.receta === 'Laminado') {
+            stockLaminado -= kgsTotal;
+          } else if (p.receta === 'PP') {
+            stockPP -= kgsTotal;
+          } else if (p.receta === 'Otros') {
+            stockOtros -= kgsTotal;
+          }
+        }
+      });
+
+      const elLam = document.getElementById('stockLaminadoVal');
+      const elPP = document.getElementById('stockPPVal');
+      const elOtros = document.getElementById('stockOtrosVal');
+      const elTotal = document.getElementById('totalStockMP');
+
+      if (elLam) elLam.textContent = `${stockLaminado.toFixed(1)} Kg`;
+      if (elPP) elPP.textContent = `${stockPP.toFixed(1)} Kg`;
+      if (elOtros) elOtros.textContent = `${stockOtros.toFixed(1)} Kg`;
+      if (elTotal) elTotal.textContent = `${(stockLaminado + stockPP + stockOtros).toFixed(1)} Kg`;
     }
 
     // LOGÍSTICA & DESPACHOS DE PRODUCTO TERMINADO
@@ -2365,6 +2416,55 @@
             </td>
           </tr>
         `;
+      });
+    }
+
+    function renderTablasMovimientos() {
+      const bodyMP = document.getElementById('tablaEntradasMPBody');
+      if (bodyMP) {
+        bodyMP.innerHTML = '';
+        registrosMP.forEach(m => {
+          bodyMP.innerHTML += `
+            <tr>
+              <td><small>${m.fecha || ''}</small></td>
+              <td><strong>${m.material || ''}</strong></td>
+              <td><strong style="color:#38bdf8">+${m.cantidad || 0} Kg</strong></td>
+              <td>${m.responsable || ''}</td>
+              <td><button class="btn btn-danger btn-sm" onclick="borrarRegistroNube('materia_prima', '${m.id}')">🗑️</button></td>
+            </tr>
+          `;
+        });
+      }
+
+      const bodyE = document.getElementById('tablaEntradasBody');
+      const bodyS = document.getElementById('tablaSalidasBody');
+      if (bodyE) bodyE.innerHTML = '';
+      if (bodyS) bodyS.innerHTML = '';
+
+      registrosMovimientos.forEach(m => {
+        if (m.tipo === 'ENTRADA' && bodyE) {
+          bodyE.innerHTML += `
+            <tr>
+              <td><small>${m.fecha || ''}</small></td>
+              <td><small>${m.motivo || ''}</small></td>
+              <td><small style="color:#6366f1">${m.referencia || ''}</small></td>
+              <td><strong style="color:#10b981">+${m.cantidad || 0}</strong></td>
+              <td>${m.responsable || ''}</td>
+              <td><button class="btn btn-danger btn-sm" onclick="borrarMovimientoSeguro('${m.id}', '${m.folio || 'N/A'}')">🗑️</button></td>
+            </tr>
+          `;
+        } else if (m.tipo === 'SALIDA' && bodyS) {
+          bodyS.innerHTML += `
+            <tr>
+              <td><small>${m.fecha || ''}</small></td>
+              <td><small>${m.motivo || ''}</small></td>
+              <td><small style="color:#6366f1">${m.referencia || ''}</small></td>
+              <td><strong style="color:#ef4444">-${m.cantidad || 0}</strong></td>
+              <td>${m.responsable || ''}</td>
+              <td><button class="btn btn-danger btn-sm" onclick="borrarMovimientoSeguro('${m.id}', '${m.folio || 'N/A'}')">🗑️</button></td>
+            </tr>
+          `;
+        }
       });
     }
 
@@ -2643,7 +2743,7 @@
       });
     }
 
-    // RENDER KARDEX PERFILES
+    // RENDER KARDEX PERFILES (ROBUSTO)
     function renderKardex() {
       const busqueda = (document.getElementById('searchKardex')?.value || '').toLowerCase().trim();
       const filtroStatus = document.getElementById('filterStockStatus')?.value || 'todos';
@@ -2654,10 +2754,22 @@
       const mapStock = {};
       DB_PERFILES.forEach(p => mapStock[p] = { entradas: 0, salidas: 0 });
 
+      // Sumar de colección movimientos
       registrosMovimientos.forEach(m => {
         if (m.referencia && mapStock[m.referencia]) {
-          if (m.tipo === 'ENTRADA') mapStock[m.referencia].entradas += (m.cantidad || 0);
-          else if (m.tipo === 'SALIDA') mapStock[m.referencia].salidas += (m.cantidad || 0);
+          if (m.tipo === 'ENTRADA') mapStock[m.referencia].entradas += (parseFloat(m.cantidad) || 0);
+          else if (m.tipo === 'SALIDA') mapStock[m.referencia].salidas += (parseFloat(m.cantidad) || 0);
+        }
+      });
+
+      // Sumar de colección produccion (Extrusora/Bitruder)
+      registrosProduccion.forEach(p => {
+        if (p.referencia && mapStock[p.referencia] && p.unidades > 0) {
+          // Si no está ya registrado como movimiento
+          const existeEnMovs = registrosMovimientos.some(m => m.referencia === p.referencia && m.fecha === p.fecha && parseFloat(m.cantidad) === parseFloat(p.unidades));
+          if (!existeEnMovs) {
+            mapStock[p.referencia].entradas += (parseFloat(p.unidades) || 0);
+          }
         }
       });
 
@@ -3143,6 +3255,103 @@
 
       renderHistorialMaquinaActual();
     }
+
+    function renderizarTodo() {
+      let sumMerma = 0;
+      registrosProduccion.forEach(r => {
+        sumMerma += (r.merma || 0);
+      });
+      registrosCorte.forEach(c => {
+        sumMerma += (c.mermaCorte || 0);
+      });
+
+      const elMerma = document.getElementById('totalMerma');
+      if (elMerma) elMerma.textContent = `${sumMerma.toFixed(1)} Kg`;
+
+      renderHistorialMaquinaActual();
+      calcularStockMateriaPrima();
+      renderKardex();
+      renderProduccionDiaria();
+      renderTablasMovimientos();
+      renderModuloMovimientos();
+      renderTablaEnsamble();
+      renderTablaDespachosPT();
+      actualizarSelectOrdenesLogistica();
+      renderKardexPT();
+      renderVisorRaw();
+    }
+
+    function cargarSelectPerfiles(selectId, filtro = "") {
+      const select = document.getElementById(selectId);
+      if (!select) return;
+      select.innerHTML = "";
+      const busqueda = filtro.toLowerCase().trim();
+      DB_PERFILES.forEach(item => {
+        if (item.toLowerCase().includes(busqueda)) {
+          const opt = document.createElement("option");
+          opt.value = item; opt.textContent = item;
+          select.appendChild(opt);
+        }
+      });
+      if (select.options.length > 0) select.selectedIndex = 0;
+    }
+
+    function filtrarPerfiles(inputId, selectId) {
+      cargarSelectPerfiles(selectId, document.getElementById(inputId).value);
+    }
+
+    function borrarRegistroNube(coleccion, id) {
+      if (confirm('¿Eliminar este registro permanentemente de la nube?')) {
+        db.collection(coleccion).doc(id).delete();
+      }
+    }
+
+    function renderVisorRaw() {
+      const p1 = document.getElementById('jsonProduccionPreview');
+      const p2 = document.getElementById('jsonMPPreview');
+      if (p1) p1.textContent = JSON.stringify(registrosProduccion, null, 2);
+      if (p2) p2.textContent = JSON.stringify(registrosMP, null, 2);
+    }
+
+    function descargarRespaldoJSON() {
+      const dataFull = { fecha: new Date().toISOString(), registrosProduccion, registrosMP, registrosMovimientos, registrosCorte, registrosEnsamble, registrosDespachosPT, listaTrabajadores };
+      const blob = new Blob([JSON.stringify(dataFull, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `backup_planta_${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+    }
+
+    function exportarExcelCSV() {
+      if (registrosProduccion.length === 0) { alert("Sin datos para exportar."); return; }
+      let csv = 'ID,Fecha,Horario,Jornada,Maquina,Operario,Operario2,Receta,Referencia,Unidades,Cantidad_Kg,Merma_Kg,Observacion\n';
+      registrosProduccion.forEach(r => {
+        csv += `"${r.id}","${r.fecha}","${r.horario}","${r.jornada}","${r.maquina}","${r.operario1 || r.operario}","${r.operario2 || ''}","${r.receta}","${r.referencia}",${r.unidades || 0},${r.cantidad},${r.merma},"${r.observacion || ''}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `produccion_planta_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+    }
+
+    // ARRANQUE
+    document.addEventListener('DOMContentLoaded', () => {
+      const hoy = new Date().toISOString().split('T')[0];
+      if (document.getElementById('prodFecha')) document.getElementById('prodFecha').value = hoy;
+      if (document.getElementById('ensFecha')) document.getElementById('ensFecha').value = hoy;
+      if (document.getElementById('despFecha')) document.getElementById('despFecha').value = hoy;
+      if (document.getElementById('corteFecha')) document.getElementById('corteFecha').value = hoy;
+      if (document.getElementById('mpFecha')) document.getElementById('mpFecha').value = hoy;
+      if (document.getElementById('entradaFecha')) document.getElementById('entradaFecha').value = hoy;
+      if (document.getElementById('salidaFecha')) document.getElementById('salidaFecha').value = hoy;
+      if (document.getElementById('filterFechaDiaria')) document.getElementById('filterFechaDiaria').value = hoy;
+
+      actualizarCalculoJornada();
+      
+      const primerBtn = document.querySelector('.sub-tab-btn');
+      switchMachineTab(primerBtn, 'ag1');
+    });
   </script>
 </body>
 </html>
