@@ -86,6 +86,7 @@
 <body>
 
   <div class="app-layout">
+    <!-- LATERAL -->
     <aside class="sidebar no-print">
       <div class="user-profile">
         <div class="user-avatar">JS</div>
@@ -108,6 +109,7 @@
             <button class="sidebar-item-btn active" onclick="switchMainTab(this, 'produccion_modulo')">Registro Producción (Maq)</button>
             <button class="sidebar-item-btn" onclick="switchMainTab(this, 'corte_modulo')">Mesa de Corte (Mermas)</button>
             <button class="sidebar-item-btn" onclick="switchMainTab(this, 'ensamble_modulo')">Ensamble (Estibas/Pisos)</button>
+            <button class="sidebar-item-btn" onclick="switchMainTab(this, 'estado_op_modulo')">Estado de Órdenes (OP)</button>
             <button class="sidebar-item-btn" onclick="switchMainTab(this, 'logistica_pt_modulo')">Logística & Despachos PT</button>
             <button class="sidebar-item-btn" onclick="switchMainTab(this, 'salidas_modulo')">Salidas Perfiles (Bodega 6)</button>
           </div>
@@ -133,6 +135,7 @@
       </nav>
     </aside>
 
+    <!-- PRINCIPAL -->
     <main class="main-content">
       <div class="header-bar">
         <div>
@@ -152,6 +155,7 @@
         <div class="metric-card" style="border-left-color: #ef4444;"><small>Merma Máquinas (Kg)</small><div class="metric-value" id="totalMerma">0.0</div></div>
       </div>
 
+      <!-- 1. PRODUCCIÓN -->
       <div id="produccion_modulo" class="tab-content active">
         <h3>Selecciona la Máquina para Registrar Producción:</h3>
         <div class="sub-tabs no-print">
@@ -218,6 +222,7 @@
         </div>
       </div>
 
+      <!-- 2. ENSAMBLE -->
       <div id="ensamble_modulo" class="tab-content">
         <div class="grid-2">
           <div class="card form-panel">
@@ -255,6 +260,60 @@
         </div>
       </div>
 
+      <!-- NUEVO: ESTADO DE ÓRDENES OP DIVIDIDO -->
+      <div id="estado_op_modulo" class="tab-content">
+        <div class="grid-2">
+          <div class="card form-panel">
+            <h3 style="color: #38bdf8;">📝 Crear Nueva Orden (OP)</h3>
+            <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px;">Crea la meta para que Producción y Logística puedan ver los avances.</p>
+            <form onsubmit="guardarNuevaOP(event)">
+              <div class="form-group">
+                <label>Fecha de Creación</label>
+                <input type="date" id="opFecha" onchange="recordarFechaInput(this)" required>
+              </div>
+              <div class="form-group">
+                <label style="color: #f59e0b;">Código de OP (Ej: YP-521)</label>
+                <input type="text" id="opCodigo" placeholder="Ej: YP-520" required style="text-transform: uppercase;">
+              </div>
+              <div class="form-group">
+                <label>Producto a Fabricar</label>
+                <input type="text" class="search-box" id="searchOPProducto" placeholder="Buscar producto..." oninput="filtrarOPProductoSelect()">
+                <select id="opProductoSelect" size="4" required style="height: auto; padding: 4px;"></select>
+              </div>
+              <div class="form-group">
+                <label style="color: #10b981;">Cantidad Solicitada (Meta)</label>
+                <input type="number" id="opCantSolicitada" min="1" step="1" required>
+              </div>
+              <button type="submit" class="btn" style="background: #0284c7;">➕ Registrar Orden</button>
+            </form>
+          </div>
+          
+          <div style="display: flex; flex-direction: column; gap: 15px;">
+            <div class="card" style="margin-bottom: 0;">
+              <h3>🔥 Órdenes Activas (En Proceso)</h3>
+              <input type="text" class="search-box" id="searchEstadoOP" placeholder="Buscar OP o Producto..." oninput="renderEstadoOPs()">
+              <div style="max-height: 250px; overflow-y: auto;">
+                <table>
+                  <thead><tr><th>OP / Fecha</th><th>Producto</th><th>Meta</th><th>Hechas</th><th>Faltan</th><th>Estado Prod.</th><th>Logística</th><th>Acción</th></tr></thead>
+                  <tbody id="tablaEstadoOPActivasBody"></tbody>
+                </table>
+              </div>
+            </div>
+            
+            <div class="card" style="margin-bottom: 0; border-color: #10b981;">
+              <h3 style="color: #10b981;">✅ Historial: Órdenes Terminadas y Despachadas</h3>
+              <div style="max-height: 250px; overflow-y: auto;">
+                <table>
+                  <thead><tr><th>OP / Fecha</th><th>Producto</th><th>Meta</th><th>Hechas</th><th>Faltan</th><th>Estado Prod.</th><th>Logística</th><th>Acción</th></tr></thead>
+                  <tbody id="tablaEstadoOPTerminadasBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOGÍSTICA & DESPACHOS PT -->
       <div id="logistica_pt_modulo" class="tab-content">
         <div class="grid-2">
           <div class="card form-panel">
@@ -314,6 +373,7 @@
         </div>
       </div>
 
+      <!-- CORTE -->
       <div id="corte_modulo" class="tab-content">
         <div class="grid-2">
           <div class="card form-panel">
@@ -342,6 +402,7 @@
         </div>
       </div>
 
+      <!-- ENTRADA MATERIA PRIMA -->
       <div id="entradas_mp_modulo" class="tab-content">
         <div class="grid-2">
           <div class="card form-panel">
@@ -369,6 +430,7 @@
         </div>
       </div>
 
+      <!-- ENTRADA PERFILES -->
       <div id="entradas_modulo" class="tab-content">
         <div class="grid-2">
           <div class="card form-panel">
@@ -392,6 +454,7 @@
         </div>
       </div>
 
+      <!-- SALIDAS PERFILES -->
       <div id="salidas_modulo" class="tab-content">
         <div class="grid-2">
           <div class="card form-panel">
@@ -415,6 +478,7 @@
         </div>
       </div>
 
+      <!-- MOVIMIENTOS -->
       <div id="movimientos_modulo" class="tab-content">
         <div class="card">
           <h2 style="color: #38bdf8;">📜 Libro Unificado de Movimientos (Audit)</h2>
@@ -432,6 +496,7 @@
         </div>
       </div>
 
+      <!-- KARDEX PERFILES -->
       <div id="stock_modulo" class="tab-content">
         <div class="card">
           <h2>📦 Kardex Real de Perfiles (128 Ref)</h2>
@@ -448,6 +513,7 @@
         </div>
       </div>
 
+      <!-- KARDEX PT -->
       <div id="kardex_pt_modulo" class="tab-content">
         <div class="card">
           <h2 style="color: #10b981;">🏆 Kardex Producto Terminado (OP)</h2>
@@ -459,6 +525,7 @@
         </div>
       </div>
 
+      <!-- REGISTRO DIARIO -->
       <div id="diario_modulo" class="tab-content">
         <div class="card">
           <h2>📅 Consolidado General por Día</h2>
@@ -470,6 +537,7 @@
         </div>
       </div>
 
+      <!-- CONFIGURACIÓN GENERAL -->
       <div id="config_modulo" class="tab-content">
         <div class="grid-2">
           <div>
@@ -520,7 +588,7 @@
         </div>
       </div>
 
-      <!-- NUEVO: DIRECTORIO CLIENTES -->
+      <!-- DIRECTORIO CLIENTES -->
       <div id="clientes_modulo" class="tab-content">
         <div class="grid-2">
           <div class="card form-panel">
@@ -545,7 +613,7 @@
         </div>
       </div>
 
-      <!-- NUEVO: DIRECTORIO TRANSPORTADORES -->
+      <!-- DIRECTORIO TRANSPORTADORES -->
       <div id="transportadores_modulo" class="tab-content">
         <div class="grid-2">
           <div class="card form-panel">
@@ -576,6 +644,7 @@
         </div>
       </div>
 
+      <!-- EXPORTACIÓN -->
       <div id="datos_raw_modulo" class="tab-content">
         <div class="card" style="max-width: 600px;">
           <h2 style="color: #38bdf8;">💾 Exportación de Datos</h2>
@@ -590,6 +659,7 @@
     </main>
   </div>
 
+  <!-- MODAL DE AJUSTE -->
   <div id="modalAjusteSeguridad" class="modal-overlay">
     <div class="modal-card">
       <h3 style="color: var(--danger); margin-bottom: 10px;">⚠️ Confirmar Ajuste Stock</h3>
@@ -610,6 +680,7 @@
     </div>
   </div>
 
+  <!-- LOGICA JAVASCRIPT SEGURA -->
   <script>
     const firebaseConfig={apiKey:"AIzaSyDpktnw8GVRqmklw9IkD2XuOu_3Uw3aMFc",authDomain:"gestion-de-planta-gpc.firebaseapp.com",projectId:"gestion-de-planta-gpc",storageBucket:"gestion-de-planta-gpc.firebasestorage.app",messagingSenderId:"39684657325",appId:"1:39684657325:web:6812632de4438903773624",measurementId:"G-222MV7FD89"};
     firebase.initializeApp(firebaseConfig); const db=firebase.firestore();
@@ -622,7 +693,7 @@
 
     let dbPerfilesNube=[], DB_PERFILES=[], dbProductosTerminadosNube=[], PRODUCTOS_TERMINADOS_CATALOGO=[], dbEstadoMaquinasNube={};
     let listaTrabajadores=[], registrosProduccion=[], registrosMP=[], registrosMovimientos=[], registrosCorte=[], registrosEnsamble=[], registrosDespachosPT=[];
-    let dbClientes=[], dbTransportadores=[];
+    let dbClientes=[], dbTransportadores=[], dbOrdenesProduccion=[];
     let maquinaActualKey="Aglutinadora 1", perfilSeleccionadoAjuste=null, maquinaActivaOperativa=true, ultimaFechaSeleccionada=new Date().toISOString().split('T')[0];
 
     const MAQUINAS_MAP = {
@@ -701,6 +772,14 @@
         renderTablaTransportadores();
       } catch(e) {}
     });
+    
+    db.collection('ordenes_produccion').onSnapshot(s => {
+      try {
+        dbOrdenesProduccion = [];
+        s.forEach(d => dbOrdenesProduccion.push({ id: d.id, ...d.data() }));
+        renderEstadoOPs();
+      } catch(e) {}
+    });
 
     db.collection('estado_maquinas').onSnapshot(s=>{
       try{dbEstadoMaquinasNube={}; s.forEach(d=>{dbEstadoMaquinasNube[d.id]=d.data().operativa;});
@@ -714,7 +793,7 @@
       if(dbProductosTerminadosNube.length===0){PRODUCTOS_TERMINADOS_CATALOGO_INICIAL.forEach(pt=>db.collection('productos_terminados').add({nombre:pt})); return;}
       dbProductosTerminadosNube.sort((a,b)=>obtenerNumConsecutivoPT(a.nombre)-obtenerNumConsecutivoPT(b.nombre));
       PRODUCTOS_TERMINADOS_CATALOGO=dbProductosTerminadosNube.map(p=>p.nombre||'Sin Nombre');
-      filtrarProductoTerminadoSelect(); renderTablaPTConfig(); renderKardexPT();}catch(e){}
+      filtrarProductoTerminadoSelect(); renderTablaPTConfig(); renderKardexPT(); filtrarOPProductoSelect();}catch(e){}
     });
 
     db.collection('perfiles').onSnapshot(s=>{
@@ -741,8 +820,8 @@
     db.collection('materia_prima').onSnapshot(s=>{try{registrosMP=[]; s.forEach(d=>registrosMP.push({id:d.id,...d.data()})); calcularStockMateriaPrima(); renderTablasMovimientos();}catch(e){}});
     db.collection('movimientos').onSnapshot(s=>{try{registrosMovimientos=[]; s.forEach(d=>registrosMovimientos.push({id:d.id,...d.data()})); renderizarTodo();}catch(e){}});
     db.collection('corte_procesos').onSnapshot(s=>{try{registrosCorte=[]; s.forEach(d=>registrosCorte.push({id:d.id,...d.data()})); renderTablaCorte();}catch(e){}});
-    db.collection('ensamble_procesos').onSnapshot(s=>{try{registrosEnsamble=[]; s.forEach(d=>registrosEnsamble.push({id:d.id,...d.data()})); renderTablaEnsamble(); actualizarSelectOrdenesLogistica(); renderKardexPT();}catch(e){}});
-    db.collection('despachos_pt').onSnapshot(s=>{try{registrosDespachosPT=[]; s.forEach(d=>registrosDespachosPT.push({id:d.id,...d.data()})); renderTablaDespachosPT(); actualizarSelectOrdenesLogistica(); renderKardexPT();}catch(e){}});
+    db.collection('ensamble_procesos').onSnapshot(s=>{try{registrosEnsamble=[]; s.forEach(d=>registrosEnsamble.push({id:d.id,...d.data()})); renderTablaEnsamble(); actualizarSelectOrdenesLogistica(); renderKardexPT(); renderEstadoOPs();}catch(e){}});
+    db.collection('despachos_pt').onSnapshot(s=>{try{registrosDespachosPT=[]; s.forEach(d=>registrosDespachosPT.push({id:d.id,...d.data()})); renderTablaDespachosPT(); actualizarSelectOrdenesLogistica(); renderKardexPT(); renderEstadoOPs();}catch(e){}});
 
     function obtenerPesoPerfilSinCortar(nombre){const p=dbPerfilesNube.find(x=>x.nombre===nombre); return p?(parseFloat(p.pesoSinCortar)||parseFloat(p.peso)||0):0;}
     function obtenerPesoPerfilCortado(nombre){const p=dbPerfilesNube.find(x=>x.nombre===nombre); if(!p)return 0; const pc=parseFloat(p.pesoCortado); return !isNaN(pc)&&pc>0?pc:obtenerPesoPerfilSinCortar(nombre);}
@@ -758,6 +837,124 @@
     function mostrarVistaPreviaPTEnsamble(){
       const s=document.getElementById('ensProductoSelect'); const bx=document.getElementById('previewPTCardEnsamble'); const l=document.getElementById('lblPreviewPTTextEnsamble');
       if(s&&s.value){l.textContent=s.value; bx.style.display='block';}else{bx.style.display='none';}
+    }
+
+    // NUEVO: CREAR ÓRDENES DE PRODUCCIÓN
+    function filtrarOPProductoSelect() {
+      const s = document.getElementById('opProductoSelect'); const b = (document.getElementById('searchOPProducto')?.value||'').toLowerCase().trim(); if(!s) return; s.innerHTML='';
+      PRODUCTOS_TERMINADOS_CATALOGO.forEach(pt => { if(!b || String(pt).toLowerCase().includes(b)) { const o = document.createElement('option'); o.value=pt; o.textContent=pt; s.appendChild(o); }});
+      if(s.options.length>0) s.selectedIndex=0;
+    }
+
+    function guardarNuevaOP(e) {
+      e.preventDefault();
+      const f = document.getElementById('opFecha').value;
+      const c = document.getElementById('opCodigo').value.trim().toUpperCase();
+      const p = document.getElementById('opProductoSelect').value;
+      const cant = parseInt(document.getElementById('opCantSolicitada').value) || 0;
+      if(!c || !p || cant <= 0) return;
+      
+      if(dbOrdenesProduccion.some(o => o.codigo === c)) {
+         alert("Esta OP ya está registrada en la meta."); return;
+      }
+
+      db.collection('ordenes_produccion').add({
+        fecha: f, codigo: c, producto: p, cantSolicitada: cant, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      }).then(() => {
+        document.getElementById('opCodigo').value = ''; document.getElementById('opCantSolicitada').value = ''; alert("✅ Orden de Producción creada. Ve a la tabla de Activas.");
+      });
+    }
+
+    function borrarOP(id) {
+       if(confirm('¿Borrar la meta de esta OP? (Los ensambles ya hechos no se borrarán)')) {
+          db.collection('ordenes_produccion').doc(id).delete();
+       }
+    }
+
+    function renderEstadoOPs() {
+      try {
+        const tbActivas = document.getElementById('tablaEstadoOPActivasBody');
+        const tbTerminadas = document.getElementById('tablaEstadoOPTerminadasBody');
+        const b = String(document.getElementById('searchEstadoOP')?.value || '').toLowerCase().trim();
+        if(!tbActivas || !tbTerminadas) return;
+        
+        tbActivas.innerHTML = '';
+        tbTerminadas.innerHTML = '';
+
+        const mapOP = {};
+
+        // 1. Cargar OPs formales
+        dbOrdenesProduccion.forEach(o => {
+          mapOP[o.codigo] = { id: o.id, fecha: o.fecha, codigo: o.codigo, producto: o.producto, meta: o.cantSolicitada, hechas: 0, despachadas: 0, esOficial: true };
+        });
+
+        // 2. Sumar fabricado de ensambles
+        registrosEnsamble.forEach(e => {
+          const op = String(e.ordenTrabajo||'S/O').trim().toUpperCase();
+          if(op !== 'S/O') {
+            if(!mapOP[op]) { mapOP[op] = { id: null, fecha: e.fecha, codigo: op, producto: e.productoTerminado, meta: 0, hechas: 0, despachadas: 0, esOficial: false }; }
+            mapOP[op].hechas += (parseFloat(e.cantRealizada) || 0);
+          }
+        });
+
+        // 3. Sumar despachado
+        registrosDespachosPT.forEach(d => {
+          const op = String(d.ordenTrabajo||'S/O').trim().toUpperCase();
+          if(mapOP[op]) mapOP[op].despachadas += (parseFloat(d.cantEnviada) || 0);
+        });
+
+        const arr = Object.values(mapOP);
+        arr.sort((x, y) => String(y.fecha||'').localeCompare(String(x.fecha||'')));
+
+        arr.forEach(o => {
+          if(b && !String(o.codigo||'').toLowerCase().includes(b) && !String(o.producto||'').toLowerCase().includes(b)) return;
+
+          const faltanFabricar = o.meta > 0 ? (o.meta - o.hechas) : 0;
+          const faltanDisplay = o.meta > 0 ? (faltanFabricar > 0 ? faltanFabricar : 0) : 'N/A';
+          
+          let estadoProd = '';
+          if(o.meta > 0) {
+             if(o.hechas >= o.meta) estadoProd = '<span class="badge badge-prod">🟢 FABRICADA</span>';
+             else if(o.hechas > 0) estadoProd = '<span class="badge badge-dia">🟡 EN PROCESO</span>';
+             else estadoProd = '<span class="badge" style="background:#475569;color:white;">⚪ PENDIENTE</span>';
+          } else {
+             estadoProd = '<span class="badge" style="background:#475569;color:white;">- Sin Meta -</span>';
+          }
+
+          let estadoLogistica = '';
+          if(o.despachadas >= o.meta && o.meta > 0) {
+             estadoLogistica = '<span class="badge" style="background:#0284c7;color:white;">📦 100% DESPACHADA</span>';
+          } else if(o.despachadas >= o.hechas && o.hechas > 0 && o.meta === 0) {
+             estadoLogistica = '<span class="badge" style="background:#0284c7;color:white;">📦 DESP. Y FACTURADA</span>';
+          } else if(o.despachadas > 0) {
+             estadoLogistica = '<span class="badge badge-noche">🚚 DESP. PARCIAL</span>';
+          } else {
+             estadoLogistica = '<span class="badge" style="background:#475569;color:white;">⏳ EN BODEGA</span>';
+          }
+
+          const btnBorrar = o.esOficial ? `<button class="btn btn-danger btn-sm" onclick="borrarOP('${o.id}')">🗑️</button>` : '';
+
+          const rowHTML = `
+            <tr>
+              <td><strong style="color:#f59e0b">${o.codigo}</strong><br><small>${o.fecha}</small></td>
+              <td><small style="color:#38bdf8">${o.producto}</small></td>
+              <td>${o.meta > 0 ? o.meta : '-'}</td>
+              <td><strong style="color:#10b981">${o.hechas}</strong></td>
+              <td style="color:#ef4444; font-weight:bold;">${faltanDisplay}</td>
+              <td>${estadoProd}</td>
+              <td>${estadoLogistica}</td>
+              <td>${btnBorrar}</td>
+            </tr>
+          `;
+
+          // SI CUMPLE LA META DE FABRICACIÓN Y DESPACHO SE VA AL HISTORIAL
+          if (o.meta > 0 && o.hechas >= o.meta && o.despachadas >= o.meta) {
+              tbTerminadas.innerHTML += rowHTML;
+          } else {
+              tbActivas.innerHTML += rowHTML;
+          }
+        });
+      } catch(e) { console.error("Error renderOP", e); }
     }
 
     function guardarEntradaStock(e){
@@ -816,54 +1013,6 @@
     function renderTablaCorte(){
       const tb=document.getElementById('tablaHistorialCorteBody'); if(!tb)return; tb.innerHTML='';
       registrosCorte.forEach(c=>tb.innerHTML+=`<tr><td><small>${c.fecha}</small></td><td><strong>${c.operario}</strong></td><td><small style="color:#f59e0b">${c.cantOrigen}u de ${c.perfilOrigen}</small></td><td><small style="color:#10b981">${c.cantDestino}u de ${c.perfilDestino}</small></td><td><strong style="color:#ef4444">${(c.mermaCorte||0).toFixed(2)} Kg</strong></td><td><button class="btn btn-danger btn-sm" onclick="borrarRegistroNube('corte_procesos','${c.id}')">🗑️</button></td></tr>`);
-    }
-
-    function crearOpcionesPerfiles() {
-      let html = '<option value="">-- Selecciona Perfil --</option>';
-      dbPerfilesNube.forEach(p => { html += `<option value="${p.nombre}">${p.nombre} (${p.pesoSinCortar || p.peso || 0} Kg/u)</option>`; });
-      return html;
-    }
-
-    function agregarFilaPerfil() {
-      const contenedor = document.getElementById('contenedorFilasPerfiles');
-      if (!contenedor) return;
-      const numFila = contenedor.children.length + 1;
-      const div = document.createElement('div');
-      div.className = 'multi-perfil-row';
-      div.style = "display:flex; gap:10px; margin-bottom:10px; align-items:center;";
-      div.innerHTML = `
-        <div style="flex: 2;"><select class="multi-select-perfil" onchange="calcularTotalesMultiPerfil()" required>${crearOpcionesPerfiles()}</select></div>
-        <div style="flex: 1;"><input type="number" class="multi-input-cantidad" placeholder="Cant. Unid" min="0" step="1" oninput="calcularTotalesMultiPerfil()" required></div>
-        <div class="subtotal-kilos-lbl" style="min-width:70px; font-weight:bold; color:#10b981;">0.00 Kg</div>
-        ${numFila > 1 ? '<button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove(); calcularTotalesMultiPerfil();">🗑️</button>' : ''}
-      `;
-      contenedor.appendChild(div);
-    }
-
-    function calcularTotalesMultiPerfil() {
-      const filasSelect = document.querySelectorAll('.multi-select-perfil');
-      const filasCant = document.querySelectorAll('.multi-input-cantidad');
-      const filasLbl = document.querySelectorAll('.subtotal-kilos-lbl');
-      let totalKilos = 0, totalUnidades = 0;
-
-      filasSelect.forEach((selectEl, idx) => {
-        const unid = parseFloat(filasCant[idx].value) || 0;
-        const subtotalKg = unid * obtenerPesoPerfilSinCortar(selectEl.value);
-        if (filasLbl[idx]) filasLbl[idx].textContent = `${subtotalKg.toFixed(2)} Kg`;
-        totalKilos += subtotalKg; totalUnidades += unid;
-      });
-
-      const lblDisplay = document.getElementById('displayTotalKilosMulti');
-      if (lblDisplay) lblDisplay.textContent = `${totalKilos.toFixed(2)} Kg / ${totalUnidades} Unid.`;
-    }
-
-    function reiniciarFilasPerfiles() {
-      const contenedor = document.getElementById('contenedorFilasPerfiles');
-      if (contenedor) {
-        contenedor.innerHTML = '';
-        for (let i = 0; i < 3; i++) agregarFilaPerfil();
-        calcularTotalesMultiPerfil();
-      }
     }
 
     function toggleEstadoMaquinaActual(){maquinaActivaOperativa=!maquinaActivaOperativa; db.collection('estado_maquinas').doc(maquinaActualKey).set({operativa:maquinaActivaOperativa,ultimaActualizacion:firebase.firestore.FieldValue.serverTimestamp()}); actualizarInterfazEstadoMaquina();}
@@ -1155,6 +1304,13 @@
       try { renderTablaDespachosPT(); } catch(e) {}
       try { actualizarSelectOrdenesLogistica(); } catch(e) {}
       try { renderKardexPT(); } catch(e) {}
+      try { renderEstadoOPs(); } catch(e) {}
+    }
+
+    function descargarRespaldoJSON() {
+      const dataFull = { fecha: new Date().toISOString(), registrosProduccion, registrosMP, registrosMovimientos, registrosCorte, registrosEnsamble, registrosDespachosPT, dbOrdenesProduccion, listaTrabajadores, dbClientes, dbTransportadores };
+      const blob = new Blob([JSON.stringify(dataFull, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup_planta_${new Date().toISOString().split('T')[0]}.json`; a.click();
     }
 
     function exportarExcelEstructurado(){
@@ -1174,9 +1330,136 @@
       XLSX.writeFile(wb, `Reporte_Planta_${new Date().toISOString().split('T')[0]}.xlsx`);
     }
 
+    function crearOpcionesPerfiles() {
+      let html = '<option value="">-- Selecciona Perfil --</option>';
+      dbPerfilesNube.forEach(p => { html += `<option value="${p.nombre}">${p.nombre} (${p.pesoSinCortar || p.peso || 0} Kg/u)</option>`; });
+      return html;
+    }
+
+    function agregarFilaPerfil() {
+      const contenedor = document.getElementById('contenedorFilasPerfiles');
+      if (!contenedor) return;
+      const numFila = contenedor.children.length + 1;
+      const isRequired = numFila === 1 ? 'required' : ''; 
+      const div = document.createElement('div');
+      div.className = 'multi-perfil-row';
+      div.style = "display:flex; gap:10px; margin-bottom:10px; align-items:center;";
+      div.innerHTML = `
+        <div style="flex: 2;"><select class="multi-select-perfil" onchange="calcularTotalesMultiPerfil()" ${isRequired}>${crearOpcionesPerfiles()}</select></div>
+        <div style="flex: 1;"><input type="number" class="multi-input-cantidad" placeholder="Cant. Unid" min="0" step="1" oninput="calcularTotalesMultiPerfil()" ${isRequired}></div>
+        <div class="subtotal-kilos-lbl" style="min-width:70px; font-weight:bold; color:#10b981;">0.00 Kg</div>
+        ${numFila > 1 ? '<button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove(); calcularTotalesMultiPerfil();">🗑️</button>' : ''}
+      `;
+      contenedor.appendChild(div);
+    }
+
+    function calcularTotalesMultiPerfil() {
+      const filasSelect = document.querySelectorAll('.multi-select-perfil');
+      const filasCant = document.querySelectorAll('.multi-input-cantidad');
+      const filasLbl = document.querySelectorAll('.subtotal-kilos-lbl');
+      let totalKilos = 0, totalUnidades = 0;
+
+      filasSelect.forEach((selectEl, idx) => {
+        const unid = parseFloat(filasCant[idx].value) || 0;
+        const subtotalKg = unid * obtenerPesoPerfilSinCortar(selectEl.value);
+        if (filasLbl[idx]) filasLbl[idx].textContent = `${subtotalKg.toFixed(2)} Kg`;
+        totalKilos += subtotalKg; totalUnidades += unid;
+      });
+
+      const lblDisplay = document.getElementById('displayTotalKilosMulti');
+      if (lblDisplay) lblDisplay.textContent = `${totalKilos.toFixed(2)} Kg / ${totalUnidades} Unid.`;
+    }
+
+    function reiniciarFilasPerfiles() {
+      const contenedor = document.getElementById('contenedorFilasPerfiles');
+      if (contenedor) {
+        contenedor.innerHTML = '';
+        agregarFilaPerfil(); 
+        calcularTotalesMultiPerfil();
+      }
+    }
+
+    function guardarProduccionMaquina(e){
+      e.preventDefault(); 
+      const eid=document.getElementById('editRecordId').value, 
+            c=Object.values(MAQUINAS_MAP).find(m=>m.nombre===maquinaActualKey), 
+            f=document.getElementById('prodFecha').value, 
+            h=document.getElementById('prodHorarioSelect').value, 
+            j=calcularJornada(h), 
+            o1=document.getElementById('prodOperarioSelect').value, 
+            o2=c.admiteDosOperarios?(document.getElementById('prodOperario2Select').value||''):'', 
+            oc=(o2&&o2!==o1)?`${o1} / ${o2}`:o1, 
+            mer=parseFloat(document.getElementById('prodMerma').value)||0, 
+            obs=document.getElementById('prodObservacion').value.trim();
+            
+      if(eid){
+        let r='N/A', u=0, ca=0, rec='N/A';
+        if(c.llevaPerfil){
+            const sr=document.querySelector('.multi-select-perfil'), ir=document.querySelector('.multi-input-cantidad'); 
+            r=sr?sr.value:''; u=ir?(parseFloat(ir.value)||0):0; ca=u*obtenerPesoPerfilSinCortar(r);
+        }else{
+            ca=parseFloat(document.getElementById('prodCantidad').value)||0; 
+            if(c.esAglutinado)rec=document.getElementById('prodRecetaSelect').value;
+        }
+        db.collection('produccion').doc(eid).update({fecha:f,horario:h,jornada:j,operario:oc,operario1:o1,operario2:o2,receta:rec,referencia:r,unidades:u,cantidad:ca,merma:mer,observacion:obs}).then(()=>{cancelarEdicionProduccion();alert("✅ Actualizado");});
+      }else{
+        if(c.llevaPerfil){
+          const fs=document.querySelectorAll('.multi-select-perfil'), fc=document.querySelectorAll('.multi-input-cantidad'); let g=0;
+          fs.forEach((s,i)=>{
+              const pn=s.value, un=parseFloat(fc[i].value)||0; 
+              if(pn&&un>0){
+                  const kg=un*obtenerPesoPerfilSinCortar(pn); 
+                  db.collection('produccion').add({fecha:f,horario:h,jornada:j,maquina:maquinaActualKey,operario:oc,operario1:o1,operario2:o2,receta:'N/A',referencia:pn,unidades:un,cantidad:kg,merma:(g===0)?mer:0,observacion:obs,timestamp:firebase.firestore.FieldValue.serverTimestamp()}); 
+                  db.collection('movimientos').add({folio:generarFolioMovimiento(),tipo:'ENTRADA',motivo:`Prod ${maquinaActualKey}`,fecha:f,referencia:pn,cantidad:un,responsable:oc,timestamp:firebase.firestore.FieldValue.serverTimestamp()}); 
+                  g++;
+              }
+          });
+          if(g===0){
+              if(!obs){alert("Ingresa Novedad si 0");return;} 
+              db.collection('produccion').add({fecha:f,horario:h,jornada:j,maquina:maquinaActualKey,operario:oc,operario1:o1,operario2:o2,receta:'N/A',referencia:'SIN PRODUCCIÓN',unidades:0,cantidad:0,merma:mer,observacion:obs,timestamp:firebase.firestore.FieldValue.serverTimestamp()});
+          } 
+          reiniciarFilasPerfiles();
+          document.getElementById('prodMerma').value='0'; 
+          document.getElementById('prodObservacion').value=''; 
+          alert("✅ Guardado");
+        }else{
+          const ca=parseFloat(document.getElementById('prodCantidad').value)||0; 
+          if(ca<=0&&!obs){alert("Novedad requerida");return;}
+          db.collection('produccion').add({
+              fecha:f,horario:h,jornada:j,maquina:maquinaActualKey,operario:oc,operario1:o1,operario2:o2,
+              receta:c.esAglutinado?document.getElementById('prodRecetaSelect').value:'N/A',referencia:'N/A',unidades:0,cantidad:ca,merma:mer,observacion:obs,timestamp:firebase.firestore.FieldValue.serverTimestamp()
+          }).then(()=>{
+              document.getElementById('prodCantidad').value='';
+              document.getElementById('prodMerma').value='0'; 
+              document.getElementById('prodObservacion').value=''; 
+              alert("✅ Guardado");
+          });
+        }
+      }
+    }
+
+    function prepararEdicionProduccion(id){const r=registrosProduccion.find(x=>x.id===id); if(!r)return; const k=Object.keys(MAQUINAS_MAP).find(x=>MAQUINAS_MAP[x].nombre===r.maquina); if(k){const b=document.querySelector(`.sub-tab-btn[onclick*="${k}"]`); if(b)switchMachineTab(b,k);} document.getElementById('editRecordId').value=r.id; document.getElementById('prodFecha').value=r.fecha||''; document.getElementById('prodHorarioSelect').value=r.horario||'7am-5pm'; actualizarCalculoJornada(); if(document.getElementById('prodOperarioSelect'))document.getElementById('prodOperarioSelect').value=r.operario1||(r.operario?r.operario.split(' / ')[0]:''); if(document.getElementById('prodOperario2Select'))document.getElementById('prodOperario2Select').value=r.operario2||''; document.getElementById('prodMerma').value=r.merma||0; document.getElementById('prodObservacion').value=r.observacion||''; const c=MAQUINAS_MAP[k]; if(c&&c.llevaPerfil){const cn=document.getElementById('contenedorFilasPerfiles'); cn.innerHTML=`<div class="multi-perfil-row" style="display:flex;gap:10px;margin-bottom:10px;"><div style="flex:2;"><select class="multi-select-perfil" onchange="calcularTotalesMultiPerfil()">${crearOpcionesPerfiles()}</select></div><div style="flex:1;"><input type="number" class="multi-input-cantidad" oninput="calcularTotalesMultiPerfil()" value="${r.unidades||0}"></div><div class="subtotal-kilos-lbl">0.00 Kg</div></div>`; cn.querySelector('.multi-select-perfil').value=r.referencia||''; calcularTotalesMultiPerfil();}else{document.getElementById('contenedorFilasPerfiles').innerHTML=''; document.getElementById('prodCantidad').value=r.cantidad||0; if(document.getElementById('prodRecetaSelect'))document.getElementById('prodRecetaSelect').value=r.receta||'70/30';} document.getElementById('btnSubmitProduccion').textContent="💾 Guardar"; document.getElementById('btnCancelarEdicion').style.display="block"; window.scrollTo(0,0);}
+    function cancelarEdicionProduccion(){document.getElementById('editRecordId').value=''; document.getElementById('btnSubmitProduccion').textContent="⚡ Guardar en Nube"; document.getElementById('btnCancelarEdicion').style.display="none"; document.getElementById('formProduccionMaquina').reset(); actualizarCalculoJornada(); const c=Object.values(MAQUINAS_MAP).find(m=>m.nombre===maquinaActualKey); if(c&&c.llevaPerfil)reiniciarFilasPerfiles();}
+    
+    function renderHistorialMaquinaActual(){
+      try {
+        const tb=document.getElementById('tablaHistorialMaquinaBody'); if(!tb)return; tb.innerHTML=''; 
+        const f=registrosProduccion.filter(r=>r.maquina===maquinaActualKey); 
+        if(f.length===0){tb.innerHTML=`<tr><td colspan="7" style="text-align:center;">Vacio</td></tr>`;return;} 
+        f.sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||'')); 
+        f.forEach(r=>{
+          const jc=r.jornada==='DIA'?'badge-dia':'badge-noche'; 
+          let dt=(r.receta&&r.receta!=='N/A')?`Receta: ${r.receta}`:(r.referencia||'N/A'); 
+          if(r.observacion)dt+=`<br><small style="color:#f59e0b">📝 ${r.observacion}</small>`; 
+          const displayCant = (parseFloat(r.unidades)||0)>0 ? `${r.unidades}u (${parseFloat(r.cantidad||0).toFixed(1)}Kg)` : `${parseFloat(r.cantidad||0).toFixed(1)}Kg`;
+          tb.innerHTML+=`<tr><td><small>${r.fecha||''}</small><br><strong>${r.horario||''}</strong></td><td><span class="badge ${jc}">${r.jornada}</span></td><td><strong>${r.operario||''}</strong></td><td>${dt}</td><td><span class="badge badge-prod">${displayCant}</span></td><td><span class="badge badge-merma">${r.merma||0}Kg</span></td><td><div style="display:flex;gap:4px;"><button class="btn btn-warning btn-sm" onclick="prepararEdicionProduccion('${r.id}')">✏️</button><button class="btn btn-danger btn-sm" onclick="borrarRegistroNube('produccion','${r.id}')">🗑️</button></div></td></tr>`;
+        });
+      } catch(e) { console.error("Error historial:", e); }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       const hoy = new Date().toISOString().split('T')[0];
-      ['prodFecha','ensFecha','despFecha','corteFecha','mpFecha','entradaFecha','salidaFecha','filterFechaDiaria','filterFechaMovimientos'].forEach(id=>{if(document.getElementById(id))document.getElementById(id).value=hoy;});
+      ['prodFecha','ensFecha','despFecha','corteFecha','mpFecha','entradaFecha','salidaFecha','filterFechaDiaria','filterFechaMovimientos','opFecha'].forEach(id=>{if(document.getElementById(id))document.getElementById(id).value=hoy;});
       actualizarCalculoJornada();
       const pB = document.querySelector('.sub-tab-btn'); if(pB) switchMachineTab(pB, 'ag1');
     });
