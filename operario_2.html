@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Registro de Producción - Green Plastic Colombia</title>
+  <style>
+    :root{--bg:#0f172a;--card:#1e293b;--border:#334155;--primary:#3b82f6;--danger:#ef4444;--warning:#f59e0b;--success:#10b981;--text:#f8fafc;--muted:#94a3b8}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:var(--bg);color:var(--text);margin:0;padding:0;min-height:100vh;font-size:16px;}
+    .wrap{max-width:480px;margin:0 auto;padding:16px;}
+    .top-bar{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;}
+    .top-bar h1{font-size:1.05rem;margin:0;}
+    .top-bar small{color:var(--muted);}
+    .btn-logout{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:6px 10px;font-size:.75rem;cursor:pointer;}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px;}
+    h2{font-size:1.1rem;margin:0 0 12px 0;color:var(--primary);}
+    .form-group{margin-bottom:12px;}
+    label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:5px;font-weight:600;}
+    input[type=text],input[type=email],input[type=password],input[type=number],input[type=date],select,textarea{
+      width:100%;padding:12px;border-radius:8px;border:1px solid var(--border);background:#0f172a;color:var(--text);font-size:1rem;
+    }
+    input[type=file]{width:100%;padding:10px;border-radius:8px;border:1px dashed var(--border);background:#0f172a;color:var(--muted);font-size:.85rem;}
+    textarea{resize:vertical;}
+    .btn{width:100%;padding:14px;border:none;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer;margin-top:6px;}
+    .btn-primary{background:var(--primary);color:#fff;}
+    .btn-success{background:var(--success);color:#fff;}
+    .btn-link{background:transparent;color:var(--primary);text-decoration:underline;font-weight:600;font-size:.85rem;padding:8px;}
+    .msg{font-size:.85rem;padding:10px;border-radius:8px;margin-top:10px;display:none;}
+    .msg.error{background:rgba(239,68,68,.15);color:var(--danger);border:1px solid var(--danger);}
+    .msg.ok{background:rgba(16,185,129,.15);color:var(--success);border:1px solid var(--success);}
+    .estado-box{text-align:center;padding:40px 16px;}
+    .estado-box .icon{font-size:3rem;margin-bottom:10px;}
+    .toggle-status-btn{padding:8px 16px;border-radius:20px;font-size:.85rem;font-weight:700;cursor:pointer;border:none;width:100%;}
+    .toggle-status-btn.activa{background:rgba(16,185,129,.2);color:var(--success);border:1px solid var(--success);}
+    .toggle-status-btn.danada{background:rgba(239,68,68,.2);color:var(--danger);border:1px solid var(--danger);}
+    .hist-item{border-bottom:1px solid var(--border);padding:8px 0;font-size:.82rem;}
+    .hist-item:last-child{border-bottom:none;}
+    .badge{padding:2px 8px;border-radius:10px;font-size:.7rem;font-weight:700;background:rgba(59,130,246,.2);color:var(--primary);}
+    .thumb-link{color:var(--primary);font-size:.75rem;text-decoration:underline;}
+    .switch-link{text-align:center;margin-top:14px;}
+    .switch-link a{color:var(--primary);font-size:.85rem;cursor:pointer;text-decoration:underline;}
+    .hidden{display:none !important;}
+    .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+  <div class="top-bar">
+    <div>
+      <h1>🏭 Green Plastic Colombia</h1>
+      <small id="topBarSub">Registro de Producción</small>
+    </div>
+    <button class="btn-logout hidden" id="btnLogout" onclick="cerrarSesion()">Salir</button>
+  </div>
+
+  <div class="wrap">
+
+    <!-- LOGIN -->
+    <div id="vistaLogin" class="card">
+      <h2>🔐 Iniciar Sesión</h2>
+      <form onsubmit="iniciarSesion(event)">
+        <div class="form-group"><label>Correo</label><input type="email" id="loginEmail" required autocomplete="username"></div>
+        <div class="form-group"><label>Contraseña</label><input type="password" id="loginPassword" required autocomplete="current-password"></div>
+        <button type="submit" class="btn btn-primary" id="btnLogin">Ingresar</button>
+      </form>
+      <div class="msg" id="msgLogin"></div>
+      <div class="switch-link"><a onclick="mostrarVista('vistaRegistro')">¿No tienes cuenta? Regístrate aquí</a></div>
+    </div>
+
+    <!-- REGISTRO -->
+    <div id="vistaRegistro" class="card hidden">
+      <h2>📝 Crear Cuenta</h2>
+      <form onsubmit="registrarCuenta(event)">
+        <div class="form-group"><label>Nombre Completo</label><input type="text" id="regNombre" required placeholder="Ej: Juan Pérez"></div>
+        <div class="form-group"><label>Correo</label><input type="email" id="regEmail" required autocomplete="username"></div>
+        <div class="form-group"><label>Contraseña</label><input type="password" id="regPassword" required minlength="6" autocomplete="new-password"></div>
+        <div class="form-group"><label>Confirmar Contraseña</label><input type="password" id="regPassword2" required minlength="6" autocomplete="new-password"></div>
+        <button type="submit" class="btn btn-success" id="btnRegistro">Crear Cuenta</button>
+      </form>
+      <div class="msg" id="msgRegistro"></div>
+      <div class="switch-link"><a onclick="mostrarVista('vistaLogin')">Ya tengo cuenta, iniciar sesión</a></div>
+    </div>
+
+    <!-- PENDIENTE DE APROBACIÓN -->
+    <div id="vistaPendiente" class="card hidden">
+      <div class="estado-box">
+        <div class="icon">⏳</div>
+        <h2 style="color:var(--warning);">Cuenta Pendiente</h2>
+        <p style="color:var(--muted); font-size:.9rem;">Tu cuenta fue creada correctamente pero está pendiente de aprobación por el administrador. Cuando te asignen una máquina, podrás registrar tu producción aquí.</p>
+      </div>
+    </div>
+
+    <!-- OPERARIO SIN MÁQUINA ASIGNADA -->
+    <div id="vistaSinMaquina" class="card hidden">
+      <div class="estado-box">
+        <div class="icon">⚙️</div>
+        <h2 style="color:var(--warning);">Sin Máquina Asignada</h2>
+        <p style="color:var(--muted); font-size:.9rem;">Tu cuenta ya fue aprobada, pero aún no tienes una máquina asignada. Contacta al administrador.</p>
+      </div>
+    </div>
+
+    <!-- REDIRECCIÓN VISOR / ADMIN -->
+    <div id="vistaRedirect" class="card hidden">
+      <div class="estado-box">
+        <div class="icon" id="redirectIcon">👁️</div>
+        <h2 id="redirectTitulo">Acceso de Visor</h2>
+        <p style="color:var(--muted); font-size:.9rem;" id="redirectTexto"></p>
+        <button class="btn btn-primary" id="btnRedirect" style="margin-top:10px;">Abrir</button>
+      </div>
+    </div>
+
+    <!-- FORMULARIO DE PRODUCCIÓN (OPERARIO CON MÁQUINA) -->
+    <div id="vistaProduccion" class="hidden">
+      <div class="card">
+        <h2 id="tituloMaquina">Registrar en: -</h2>
+        <button type="button" id="btnToggleEstado" class="toggle-status-btn activa" onclick="toggleEstadoMaquina()">🟢 EN FUNCIONAMIENTO</button>
+      </div>
+
+      <div class="card">
+        <form id="formProduccion" onsubmit="guardarProduccion(event)">
+          <div class="form-group"><label>Fecha</label><input type="date" id="prodFecha" required></div>
+          <div class="form-group"><label>Horario</label>
+            <select id="prodHorario" onchange="actualizarJornadaDisplay()">
+              <option value="6am-6pm">6am-6pm</option><option value="6pm-6am">6pm-6am</option>
+              <option value="7am-5pm" selected>7am-5pm</option><option value="7pm-5am">7pm-5am</option>
+              <option value="6am-4pm">6am-4pm</option><option value="6pm-4am">6pm-4am</option>
+              <option value="8am-6pm">8am-6pm</option><option value="8pm-6am">8pm-6am</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Jornada</label><input type="text" id="jornadaDisplay" readonly style="text-align:center;font-weight:bold;color:var(--warning);"></div>
+
+          <div class="form-group hidden" id="grupoOperario2"><label>👷 Operario 2 (Apoyo, opcional)</label><input type="text" id="prodOperario2" placeholder="Nombre del compañero de turno"></div>
+
+          <div class="form-group hidden" id="grupoReceta"><label>🧪 Material Consumido / Molido</label>
+            <select id="prodReceta">
+              <option value="70/30">Mezcla Standard 70/30</option><option value="50/50">Mezcla 50/50</option>
+              <option value="100% Laminado">Solo Laminado (100%)</option><option value="100% P.P">Solo P.P (100%)</option>
+              <option value="Otros">Otros Materiales</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="grupoCantidad"><label id="lblCantidad">Cantidad / Kilos</label><input type="number" step="0.01" id="prodCantidad" placeholder="0.00"></div>
+
+          <div class="form-group hidden" id="grupoPerfil">
+            <label>📦 Perfil Producido</label>
+            <select id="prodPerfilSelect"></select>
+            <label style="margin-top:8px;">Unidades Producidas</label>
+            <input type="number" id="prodPerfilCantidad" min="0" step="1" placeholder="0" oninput="calcularSubtotalPerfil()">
+            <div style="text-align:right;font-size:.8rem;color:var(--success);margin-top:4px;" id="subtotalPerfilLbl">0.00 Kg</div>
+          </div>
+
+          <div class="form-group"><label>Merma / Desperdicio (Kg)</label><input type="number" step="0.01" id="prodMerma" value="0"></div>
+
+          <div class="form-group"><label>📝 Observaciones / Novedades</label><textarea id="prodObservacion" rows="2" placeholder="Ej: Mantenimiento, Parada..."></textarea></div>
+
+          <button type="submit" class="btn btn-success" id="btnGuardarProduccion">⚡ Guardar Registro</button>
+        </form>
+        <div class="msg" id="msgProduccion"></div>
+      </div>
+
+      <div class="card">
+        <h2>Mis Últimos Registros</h2>
+        <div id="listaHistorial"><p style="color:var(--muted); font-size:.85rem;">Sin registros todavía.</p></div>
+      </div>
+    </div>
+
+    <div class="msg error" id="msgGlobal" style="margin-top:10px;"></div>
+  </div>
+
+  <script>
+    // ======= CONFIGURACIÓN FIREBASE (mismo proyecto que el sistema principal) =======
+    const firebaseConfig = { apiKey: "AIzaSyDpktnw8GVRqmklw9IkD2XuOu_3Uw3aMFc", authDomain: "gestion-de-planta-gpc.firebaseapp.com", projectId: "gestion-de-planta-gpc", storageBucket: "gestion-de-planta-gpc.firebasestorage.app", messagingSenderId: "39684657325", appId: "1:39684657325:web:6812632de4438903773624", measurementId: "G-222MV7FD89" };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // ======= CONFIGURACIÓN DE MÁQUINAS (mismo modelo que el sistema principal) =======
+    const MAQUINAS_MAP = {
+      'Aglutinadora 1': { consumeMP:true, llevaPerfil:false, admiteDosOperarios:false, unidad:'Kg' },
+      'Aglutinadora 2': { consumeMP:true, llevaPerfil:false, admiteDosOperarios:false, unidad:'Kg' },
+      'Aglutinadora 3': { consumeMP:true, llevaPerfil:false, admiteDosOperarios:false, unidad:'Kg' },
+      'Molino 1': { consumeMP:false, llevaPerfil:false, admiteDosOperarios:false, unidad:'Kg' },
+      'Molino 2': { consumeMP:true, llevaPerfil:false, admiteDosOperarios:false, unidad:'Kg' },
+      'Guillotina': { consumeMP:false, llevaPerfil:false, admiteDosOperarios:false, unidad:'Kg Cortados' },
+      'Extrusora Principal': { consumeMP:false, llevaPerfil:true, admiteDosOperarios:true, unidad:'Unidades / Kg' },
+      'Bitruder 1': { consumeMP:false, llevaPerfil:true, admiteDosOperarios:false, unidad:'Tablas / Kg' }
+    };
+
+    let usuarioActual = null, perfilUsuario = null, dbPerfilesNube = [];
+
+    function mostrarVista(id) {
+      ['vistaLogin','vistaRegistro','vistaPendiente','vistaSinMaquina','vistaRedirect','vistaProduccion'].forEach(v => {
+        const el = document.getElementById(v); if(el) el.classList.add('hidden');
+      });
+      document.getElementById(id).classList.remove('hidden');
+      document.getElementById('btnLogout').classList.toggle('hidden', id === 'vistaLogin' || id === 'vistaRegistro');
+    }
+
+    function mostrarMsg(id, texto, tipo) {
+      const el = document.getElementById(id); el.textContent = texto; el.className = `msg ${tipo}`; el.style.display = 'block';
+    }
+
+    // ======= AUTENTICACIÓN =======
+    function iniciarSesion(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim(), pass = document.getElementById('loginPassword').value;
+      const btn = document.getElementById('btnLogin'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Ingresando...';
+      auth.signInWithEmailAndPassword(email, pass).catch(err => {
+        mostrarMsg('msgLogin', traducirErrorAuth(err), 'error');
+      }).finally(() => { btn.disabled = false; btn.textContent = 'Ingresar'; });
+    }
+
+    function registrarCuenta(e) {
+      e.preventDefault();
+      const nombre = document.getElementById('regNombre').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const pass = document.getElementById('regPassword').value, pass2 = document.getElementById('regPassword2').value;
+      if(!nombre) { mostrarMsg('msgRegistro', 'Escribe tu nombre completo.', 'error'); return; }
+      if(pass !== pass2) { mostrarMsg('msgRegistro', 'Las contraseñas no coinciden.', 'error'); return; }
+      const btn = document.getElementById('btnRegistro'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Creando cuenta...';
+      auth.createUserWithEmailAndPassword(email, pass).then(cred => {
+        return db.collection('usuarios').doc(cred.user.uid).set({ nombre, email, rol: 'pendiente', maquinaAsignada: null, activo: false, fechaRegistro: firebase.firestore.FieldValue.serverTimestamp() });
+      }).catch(err => {
+        mostrarMsg('msgRegistro', traducirErrorAuth(err), 'error');
+      }).finally(() => { btn.disabled = false; btn.textContent = 'Crear Cuenta'; });
+    }
+
+    function cerrarSesion() { auth.signOut(); }
+
+    function traducirErrorAuth(err) {
+      const map = { 'auth/user-not-found':'No existe una cuenta con ese correo.', 'auth/wrong-password':'Contraseña incorrecta.', 'auth/email-already-in-use':'Ese correo ya está registrado.', 'auth/invalid-email':'Correo inválido.', 'auth/weak-password':'La contraseña debe tener al menos 6 caracteres.', 'auth/invalid-credential':'Correo o contraseña incorrectos.' };
+      return map[err.code] || ('Error: ' + err.message);
+    }
+
+    // ======= FLUJO PRINCIPAL SEGÚN ROL =======
+    auth.onAuthStateChanged(user => {
+      usuarioActual = user;
+      if(!user) { mostrarVista('vistaLogin'); return; }
+      db.collection('usuarios').doc(user.uid).get().then(doc => {
+        if(!doc.exists) { mostrarVista('vistaPendiente'); return; }
+        perfilUsuario = doc.data();
+        document.getElementById('topBarSub').textContent = `${perfilUsuario.nombre || user.email}`;
+
+        if(perfilUsuario.rol === 'operario' && perfilUsuario.maquinaAsignada) {
+          iniciarFormularioMaquina(perfilUsuario.maquinaAsignada);
+          mostrarVista('vistaProduccion');
+        } else if(perfilUsuario.rol === 'operario') {
+          mostrarVista('vistaSinMaquina');
+        } else if(perfilUsuario.rol === 'visor') {
+          document.getElementById('redirectIcon').textContent = '👁️';
+          document.getElementById('redirectTitulo').textContent = 'Acceso de Visor';
+          document.getElementById('redirectTexto').textContent = 'Tu cuenta tiene acceso de solo lectura al panel de visualización.';
+          document.getElementById('btnRedirect').textContent = 'Abrir Visor';
+          document.getElementById('btnRedirect').onclick = () => window.location.href = 'visualizacion.html';
+          mostrarVista('vistaRedirect');
+        } else if(perfilUsuario.rol === 'admin') {
+          document.getElementById('redirectIcon').textContent = '🛠️';
+          document.getElementById('redirectTitulo').textContent = 'Acceso de Administrador';
+          document.getElementById('redirectTexto').textContent = 'Tu cuenta tiene acceso completo al panel de administración.';
+          document.getElementById('btnRedirect').textContent = 'Abrir Panel de Administración';
+          document.getElementById('btnRedirect').onclick = () => window.location.href = 'index.html';
+          mostrarVista('vistaRedirect');
+        } else {
+          mostrarVista('vistaPendiente');
+        }
+      }).catch(() => mostrarVista('vistaPendiente'));
+    });
+
+    // ======= FORMULARIO DINÁMICO SEGÚN MÁQUINA ASIGNADA =======
+    let maquinaConfig = null, maquinaNombre = '', operativaActual = true;
+
+    function iniciarFormularioMaquina(nombreMaquina) {
+      maquinaNombre = nombreMaquina;
+      maquinaConfig = MAQUINAS_MAP[nombreMaquina] || { consumeMP:false, llevaPerfil:false, admiteDosOperarios:false };
+      document.getElementById('tituloMaquina').textContent = `Registrar en: ${nombreMaquina}`;
+      document.getElementById('grupoOperario2').classList.toggle('hidden', !maquinaConfig.admiteDosOperarios);
+      document.getElementById('grupoReceta').classList.toggle('hidden', !maquinaConfig.consumeMP);
+      document.getElementById('grupoCantidad').classList.toggle('hidden', !!maquinaConfig.llevaPerfil);
+      document.getElementById('grupoPerfil').classList.toggle('hidden', !maquinaConfig.llevaPerfil);
+      document.getElementById('prodFecha').value = new Date().toISOString().split('T')[0];
+      actualizarJornadaDisplay();
+
+      db.collection('estado_maquinas').doc(nombreMaquina).onSnapshot(doc => {
+        operativaActual = doc.exists ? (doc.data().operativa !== false) : true;
+        actualizarBotonEstado();
+      });
+
+      if(maquinaConfig.llevaPerfil) {
+        db.collection('perfiles').onSnapshot(s => {
+          const t = []; s.forEach(d => t.push({ docId: d.id, ...d.data() }));
+          dbPerfilesNube = t.sort((a,b) => (a.id||0) - (b.id||0));
+          const sel = document.getElementById('prodPerfilSelect');
+          sel.innerHTML = '<option value="">-- Selecciona Perfil --</option>' + dbPerfilesNube.map(p => `<option value="${p.nombre}">${p.nombre} (${p.pesoSinCortar||0} Kg/u)</option>`).join('');
+        });
+      }
+
+      db.collection('produccion').where('maquina','==', nombreMaquina).onSnapshot(s => {
+        let regs = []; s.forEach(d => regs.push({ id:d.id, ...d.data() }));
+        regs = regs.filter(r => (r.operario1 === perfilUsuario.nombre) || (r.operario === perfilUsuario.nombre));
+        regs.sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
+        renderHistorialPropio(regs.slice(0, 10));
+      });
+    }
+
+    function actualizarJornadaDisplay() {
+      const h = document.getElementById('prodHorario').value;
+      const j = (h && h.includes('pm-') && !h.startsWith('8am')) ? 'NOCHE' : 'DIA';
+      document.getElementById('jornadaDisplay').value = j === 'DIA' ? '☀️ DIA' : '🌙 NOCHE';
+    }
+
+    function toggleEstadoMaquina() {
+      db.collection('estado_maquinas').doc(maquinaNombre).set({ operativa: !operativaActual, ultimaActualizacion: firebase.firestore.FieldValue.serverTimestamp() });
+    }
+
+    function actualizarBotonEstado() {
+      const b = document.getElementById('btnToggleEstado');
+      b.textContent = operativaActual ? '🟢 EN FUNCIONAMIENTO' : '🔴 DAÑADA (Tocar para reportar arreglada)';
+      b.className = `toggle-status-btn ${operativaActual ? 'activa' : 'danada'}`;
+    }
+
+    function calcularSubtotalPerfil() {
+      const nombre = document.getElementById('prodPerfilSelect').value;
+      const unid = parseFloat(document.getElementById('prodPerfilCantidad').value) || 0;
+      const perfil = dbPerfilesNube.find(p => p.nombre === nombre);
+      const peso = perfil ? (parseFloat(perfil.pesoSinCortar) || 0) : 0;
+      document.getElementById('subtotalPerfilLbl').textContent = `${(unid * peso).toFixed(2)} Kg`;
+    }
+
+    function renderHistorialPropio(regs) {
+      const cont = document.getElementById('listaHistorial');
+      if(regs.length === 0) { cont.innerHTML = '<p style="color:var(--muted); font-size:.85rem;">Sin registros todavía.</p>'; return; }
+      cont.innerHTML = regs.map(r => {
+        const cant = (parseFloat(r.unidades)||0) > 0 ? `${r.unidades}u (${(parseFloat(r.cantidad)||0).toFixed(1)}Kg)` : `${(parseFloat(r.cantidad)||0).toFixed(1)}Kg`;
+        return `<div class="hist-item"><span class="badge">${r.fecha||''}</span> ${r.jornada||''} — <strong>${cant}</strong>${r.merma>0?` (Merma: ${r.merma}Kg)`:''}</div>`;
+      }).join('');
+    }
+
+    // ======= GUARDAR PRODUCCIÓN =======
+    async function guardarProduccion(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnGuardarProduccion');
+      const f = document.getElementById('prodFecha').value;
+      const h = document.getElementById('prodHorario').value;
+      const j = (h && h.includes('pm-') && !h.startsWith('8am')) ? 'NOCHE' : 'DIA';
+      const o1 = perfilUsuario.nombre;
+      const o2 = maquinaConfig.admiteDosOperarios ? document.getElementById('prodOperario2').value.trim() : '';
+      const oc = (o2 && o2 !== o1) ? `${o1} / ${o2}` : o1;
+      const merma = parseFloat(document.getElementById('prodMerma').value) || 0;
+      const obs = document.getElementById('prodObservacion').value.trim();
+
+      let referencia = 'N/A', unidades = 0, cantidad = 0, receta = 'N/A';
+      if(maquinaConfig.llevaPerfil) {
+        referencia = document.getElementById('prodPerfilSelect').value;
+        unidades = parseFloat(document.getElementById('prodPerfilCantidad').value) || 0;
+        const perfil = dbPerfilesNube.find(p => p.nombre === referencia);
+        cantidad = unidades * (perfil ? (parseFloat(perfil.pesoSinCortar)||0) : 0);
+        if(unidades > 0 && !referencia) { mostrarMsg('msgProduccion', 'Selecciona el perfil producido.', 'error'); return; }
+      } else {
+        cantidad = parseFloat(document.getElementById('prodCantidad').value) || 0;
+        if(maquinaConfig.consumeMP) receta = document.getElementById('prodReceta').value;
+      }
+      if(cantidad <= 0 && unidades <= 0 && !obs) { mostrarMsg('msgProduccion', 'Ingresa una cantidad o escribe una novedad si la producción fue 0.', 'error'); return; }
+
+      btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Guardando...';
+      try {
+        await db.collection('produccion').add({
+          fecha: f, horario: h, jornada: j, maquina: maquinaNombre,
+          operario: oc, operario1: o1, operario2: o2,
+          receta, referencia, unidades, cantidad, merma, observacion: obs,
+          registradoPorUid: usuarioActual.uid,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        mostrarMsg('msgProduccion', '✅ Registro guardado correctamente.', 'ok');
+        document.getElementById('formProduccion').reset();
+        document.getElementById('prodFecha').value = new Date().toISOString().split('T')[0];
+        document.getElementById('prodMerma').value = '0';
+        actualizarJornadaDisplay();
+        if(document.getElementById('subtotalPerfilLbl')) document.getElementById('subtotalPerfilLbl').textContent = '0.00 Kg';
+      } catch(err) {
+        mostrarMsg('msgProduccion', 'Error al guardar: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false; btn.textContent = '⚡ Guardar Registro';
+      }
+    }
+  </script>
+</body>
+</html>
