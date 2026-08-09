@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Ejecutivo - Green Plastic Colombia</title>
+  
+  <!-- LIBRERÍA DE GRÁFICOS (CHART.JS) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <style>
+    :root{--bg-color:#0f172a;--card-bg:#1e293b;--border-color:#334155;--primary:#3b82f6;--primary-hover:#2563eb;--danger:#ef4444;--warning:#f59e0b;--success:#10b981;--text:#f8fafc;--text-muted:#94a3b8}
+    *{box-sizing:border-box}
+    body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background-color:var(--bg-color);color:var(--text);margin:0;padding:0;height:100vh;overflow:hidden;font-size:14px}
+    .app-layout{display:flex;width:100%;height:100vh;position:relative;}
+    
+    /* SIDEBAR */
+    .sidebar{width:250px;min-width:250px;background-color:var(--card-bg);border-right:1px solid var(--border-color);display:flex;flex-direction:column;overflow-y:auto;z-index:100;}
+    .user-profile{padding:15px;border-bottom:1px solid var(--border-color);display:flex;align-items:center;gap:12px;background-color:#0f172a}
+    .user-avatar{width:38px;height:38px;background-color:var(--success);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:700;border:2px solid #10b981}
+    .user-info{display:flex;flex-direction:column}
+    .user-name{font-weight:700;font-size:.9rem;color:var(--text)}
+    .user-role{font-size:.7rem;color:var(--primary);margin-top:2px}
+    .sidebar-nav{flex:1;padding-top:15px}
+    
+    .sidebar-item-btn{width:100%;text-align:left;padding:12px 15px 12px 20px;background:0 0;color:var(--text);border:none;font-size:.85rem;font-weight:600;cursor:pointer;border-left:4px solid transparent;transition:all .2s; border-bottom:1px solid var(--border-color);}
+    .sidebar-item-btn:hover{background-color:#334155}
+    .sidebar-item-btn.active{color:var(--primary);background-color:#1e293b;border-left-color:var(--primary)}
+    
+    .main-content{flex:1;padding:15px 25px;overflow-y:auto;background-color:var(--bg-color); width: 100%; overflow-x: hidden;}
+    h1{font-size:1.4rem;margin-top:0;margin-bottom:2px}
+    h2{font-size:1.15rem;margin-top:0;margin-bottom:15px; color:var(--primary);}
+    
+    .header-bar{display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--border-color);margin-bottom:15px}
+    .status-cloud{padding:4px 10px;border-radius:20px;font-size:.75rem;font-weight:700;background:rgba(16,185,129,.2);color:var(--success);border:1px solid var(--success)}
+    
+    .tab-content{display:none}
+    .tab-content.active{display:block; animation: fadeIn 0.3s;}
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    
+    .card{background:var(--card-bg);padding:15px;border-radius:8px;border:1px solid var(--border-color);box-shadow:0 4px 6px -1px rgba(0,0,0,.3);margin-bottom:15px}
+    
+    table{width:100%;border-collapse:collapse;margin-top:5px;font-size:.8rem}
+    th,td{padding:10px 8px;text-align:left;border-bottom:1px solid var(--border-color)}
+    th{background-color:#0f172a;color:var(--text-muted);font-weight:600}
+    
+    .badge{padding:3px 6px;border-radius:4px;font-size:.75rem;font-weight:700}
+    .badge-merma{background:rgba(239,68,68,.2);color:var(--danger)}
+    .badge-prod{background:rgba(16,185,129,.2);color:var(--success)}
+    .badge-stock{background:rgba(59,130,246,.2);color:var(--primary);font-size:.9rem}
+    .badge-dia{background:rgba(245,158,11,.2);color:var(--warning);border:1px solid var(--warning)}
+    .badge-noche{background:rgba(99,102,241,.2);color:#a5b4fc;border:1px solid #6366f1}
+    
+    .metrics-container{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:15px}
+    .metric-card{background:var(--card-bg);padding:12px;border-radius:6px;border-left:3px solid var(--primary); box-shadow:0 2px 4px rgba(0,0,0,0.2);}
+    .metric-value{font-size:1.4rem;font-weight:700;margin-top:4px}
+    
+    .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom:15px; }
+    .chart-container { position: relative; height: 250px; width: 100%; }
+    .pie-container { position: relative; height: 250px; width: 100%; display: flex; justify-content: center;}
+    
+    /* MODIFICACIONES RESPONSIVAS PARA MÓVILES */
+    .menu-btn { display:none; background:transparent; border:none; color:var(--text); font-size:1.8rem; cursor:pointer; margin-right:10px; padding:0; line-height:1;}
+    .overlay-mobile { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:90; }
+    
+    @media (max-width: 900px) {
+      .menu-btn { display: block; }
+      .sidebar { position: fixed; left: -260px; top: 0; bottom: 0; transition: left 0.3s ease; box-shadow: 2px 0 10px rgba(0,0,0,0.5); }
+      .sidebar.open { left: 0; }
+      .overlay-mobile.open { display: block; }
+      .chart-grid { grid-template-columns: 1fr; }
+      .metrics-container { grid-template-columns: 1fr 1fr; }
+      .card { overflow-x: auto; }
+    }
+    @media (max-width: 480px) { .metrics-container { grid-template-columns: 1fr; } }
+
+    /* GRUPOS DE SIDEBAR */
+    .sidebar-group-label{padding:14px 15px 4px 20px;font-size:.68rem;font-weight:700;letter-spacing:.05em;color:var(--text-muted);text-transform:uppercase;}
+
+    /* BARRA DE FILTROS GLOBALES */
+    .filtro-bar{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;background:var(--card-bg);border:1px solid var(--border-color);border-radius:8px;padding:10px 14px;margin-bottom:15px;}
+    .filtro-bar .fg{display:flex;flex-direction:column;gap:3px;}
+    .filtro-bar label{font-size:.7rem;color:var(--text-muted);}
+    .filtro-bar input[type=date]{background:#0f172a;border:1px solid var(--border-color);color:var(--text);border-radius:5px;padding:6px 8px;font-size:.8rem;}
+    .filtro-bar .search-box{background:#0f172a;border:1px solid var(--border-color);color:var(--text);border-radius:5px;padding:6px 8px;font-size:.8rem;}
+    .btn-filtro{background:var(--primary);color:#fff;border:none;border-radius:5px;padding:7px 14px;font-size:.8rem;font-weight:700;cursor:pointer;}
+    .btn-filtro.limpiar{background:#475569;}
+    .btn-filtro.imprimir{background:var(--success);}
+    #estadoFiltroActivo{font-size:.72rem;color:var(--warning);font-weight:700;}
+
+    /* VISOR DE MÁQUINAS */
+    .maquinas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;}
+    .maquina-card{background:var(--card-bg);border:1px solid var(--border-color);border-radius:8px;padding:12px;}
+    .maquina-card h4{margin:0 0 8px 0;color:var(--warning);display:flex;justify-content:space-between;align-items:center;font-size:.9rem;}
+    .estado-pill{padding:3px 10px;border-radius:12px;font-size:.7rem;font-weight:700;}
+    .estado-pill.op{background:rgba(16,185,129,.2);color:var(--success);border:1px solid var(--success);}
+    .estado-pill.da{background:rgba(239,68,68,.2);color:var(--danger);border:1px solid var(--danger);}
+    .comp-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border-color);font-size:.75rem;}
+    .comp-estado{font-weight:700;}
+    .comp-estado.OK{color:var(--success);}
+    .comp-estado.Revisar{color:var(--warning);}
+    .comp-estado.Reparar,.comp-estado.Cambiar{color:var(--danger);}
+    .obs-box{background:#0f172a;border:1px solid var(--border-color);border-radius:6px;padding:8px;font-size:.75rem;color:var(--text-muted);margin-top:8px;white-space:pre-wrap;min-height:20px;}
+
+    /* IMPRESIÓN */
+    @media print{
+      .sidebar,.menu-btn,.status-cloud,.filtro-bar,.no-print{display:none !important;}
+      body{overflow:visible !important;height:auto !important;background:#fff !important;color:#000 !important;}
+      .main-content{overflow:visible !important;padding:0 !important;width:100% !important;}
+      .tab-content{display:none !important;}
+      .tab-content.active{display:block !important;}
+      .card{background:#fff !important;border:1px solid #ccc !important;box-shadow:none !important;break-inside:avoid;color:#000 !important;}
+      th{background:#eee !important;color:#000 !important;}
+      td,th{border-color:#ccc !important;color:#000 !important;}
+      h1,h2,h3,h4{color:#000 !important;}
+      .metric-card{border:1px solid #ccc !important;background:#fff !important;color:#000 !important;}
+      .app-layout{display:block !important;height:auto !important;}
+      div[style*="overflow-y"]{max-height:none !important;overflow:visible !important;}
+      div[style*="overflow-x"]{overflow:visible !important;}
+      table{page-break-inside:auto;}
+      tr{page-break-inside:avoid;}
+    }
+  </style>
+  
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+  <div class="app-layout">
+    <div id="overlayMobile" class="overlay-mobile" onclick="toggleMenu()"></div>
+
+    <!-- LATERAL SOLO LECTURA -->
+    <aside class="sidebar">
+      <div class="user-profile">
+        <div class="user-avatar">👁️</div>
+        <div class="user-info">
+          <span class="user-name">Visor Ejecutivo</span>
+          <span class="user-role">Modo Solo Lectura</span>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <button class="sidebar-item-btn active" onclick="switchMainTab(this, 'dash_principal')">📊 Dashboard Inteligente</button>
+
+        <div class="sidebar-group-label">📥 Entradas / Insumos</div>
+        <button class="sidebar-item-btn" onclick="switchMainTab(this, 'dash_entradas_mp')">Entradas Materia Prima</button>
+        <button class="sidebar-item-btn" onclick="switchMainTab(this, 'dash_movimientos_perfiles')">Movimientos de Perfiles (E/S)</button>
+
+        <div class="sidebar-group-label">🏭 Producción &amp; Planta</div>
+        <button class="sidebar-item-btn" onclick="switchMainTab(this, 'dash_produccion')">Producción (Máquinas)</button>
+        <button class="sidebar-item-btn" onclick="switchMainTab(this, 'dash_aglutinado')">Material Aglutinado</button>
+        <button class="sidebar-item-btn" onclick="switchMainTab(this, 'dash_ensamble')">Ensamble &amp; Corte</button>
+        <button class="sidebar-item-btn" onclick="switchMainTab(this, 'dash_ops')">Estado de OPs (Logística)</button>
+
+        <div class="sidebar-group-label">🔧 Mantenimiento</div>
+        <button class="sidebar-item-btn" onclick="switchMainTab(this, 'dash_mantenimiento')">Máquinas y Mantenimiento</button>
+
+        <div class="sidebar-group-label">📦 Inventarios</div>
+        <button class="sidebar-item-btn" onclick="switchMainTab(this, 'dash_kardex')">Inventario Kardex</button>
+        <button class="sidebar-item-btn" onclick="switchMainTab(this, 'dash_mermas')">Stock Mermas Físicas (Torta)</button>
+        <button class="sidebar-item-btn" onclick="switchMainTab(this, 'dash_libro')">Libro Único de Movimientos</button>
+
+        <div class="sidebar-group-label">📈 Reportes</div>
+        <button class="sidebar-item-btn" onclick="switchMainTab(this, 'dash_desempeno')">Desempeño de Trabajadores</button>
+        <button class="sidebar-item-btn" onclick="switchMainTab(this, 'dash_eficiencia')">Eficiencia de Máquinas</button>
+
+        <div class="sidebar-group-label">⚙️ Sistema</div>
+        <button class="sidebar-item-btn" onclick="switchMainTab(this, 'dash_sistema')">Catálogos y Directorios</button>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <div class="header-bar">
+        <div style="display:flex; align-items:center;">
+          <button class="menu-btn" onclick="toggleMenu()">☰</button>
+          <div>
+            <h1>Panel de Visualización en Tiempo Real</h1>
+            <small style="color: var(--warning)">⚠️ La edición está deshabilitada en esta vista.</small>
+          </div>
+        </div>
+        <div class="status-cloud">☁️ Actualizado en Vivo</div>
+      </div>
+
+      <div class="filtro-bar no-print">
+        <div class="fg"><label>Desde</label><input type="date" id="filtroDesde"></div>
+        <div class="fg"><label>Hasta</label><input type="date" id="filtroHasta"></div>
+        <button class="btn-filtro" onclick="aplicarFiltroFechas()">🔍 Aplicar Filtro</button>
+        <button class="btn-filtro limpiar" onclick="limpiarFiltroFechas()">✖ Quitar Filtro (Mes Actual)</button>
+        <button class="btn-filtro imprimir" onclick="window.print()">🖨️ Imprimir Vista Actual</button>
+        <span id="estadoFiltroActivo"></span>
+        <div style="flex:1;"></div>
+        <div class="fg"><label>Reporte Diario</label><input type="date" id="fechaReporteDiario"></div>
+        <button class="btn-filtro" style="background:#10b981;" onclick="descargarReporteDiarioExcel()">📊 Descargar Excel del Día</button>
+      </div>
+
+      <!-- TARJETAS GLOBALES -->
+      <div class="metrics-container">
+        <div class="metric-card" style="border-left-color: #3b82f6;"><small>Materia Prima Disp.</small><div class="metric-value" id="totalStockMP">0.0 Kg</div></div>
+        <div class="metric-card" style="border-left-color: #10b981;"><small>Stock Perfiles (Nave)</small><div class="metric-value" id="totalStockPerfiles">0 Unid.</div></div>
+        <div class="metric-card" style="border-left-color: #a855f7;"><small>Estibas Terminadas</small><div class="metric-value" id="totalStockPT">0 Unid.</div></div>
+        <div class="metric-card" style="border-left-color: #ef4444;"><small>Merma Mes Actual</small><div class="metric-value" id="totalMerma">0.0 Kg</div></div>
+      </div>
+
+      <!-- 1. DASHBOARD PRINCIPAL (DESEMPEÑO) -->
+      <div id="dash_principal" class="tab-content active">
+        <h2>📊 Rendimiento del Personal y Planta (Mes Actual)</h2>
+        <div class="chart-grid">
+          <div class="card">
+            <h3 style="text-align: center; color: #38bdf8;">🏆 Top Operarios (Kilos Producidos)</h3>
+            <div class="chart-container"><canvas id="chartTopTrabajadores"></canvas></div>
+          </div>
+          <div class="card">
+            <h3 style="text-align: center; color: #f59e0b;">🔨 Top Ensambladores (Estibas)</h3>
+            <div class="chart-container"><canvas id="chartTopEnsambladores"></canvas></div>
+          </div>
+        </div>
+        <div class="chart-grid" style="grid-template-columns: 1fr 2fr;">
+          <div class="card">
+            <h3 style="text-align: center;">☀️ Día vs 🌙 Noche (Rendimiento)</h3>
+            <div class="pie-container"><canvas id="chartTurnos"></canvas></div>
+          </div>
+          <div class="card">
+            <h3 style="color:#10b981;">Resumen del Día de Hoy</h3>
+            <div id="resumenHoyRapido" style="padding:10px; font-size:1.1rem; line-height:1.8;">Cargando métricas...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ENTRADAS MATERIA PRIMA -->
+      <div id="dash_entradas_mp" class="tab-content">
+        <h2>📥 Entradas de Materia Prima (B1)</h2>
+        <div class="chart-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+          <div class="card"><small style="color:#3b82f6;">Laminado Ingresado</small><div class="metric-value" id="mpTotLaminado">0.0 Kg</div></div>
+          <div class="card"><small style="color:#a855f7;">P.P Ingresado</small><div class="metric-value" id="mpTotPP">0.0 Kg</div></div>
+          <div class="card"><small style="color:#f59e0b;">Otros Ingresados</small><div class="metric-value" id="mpTotOtros">0.0 Kg</div></div>
+        </div>
+        <div class="card">
+          <h3>Historial de Recepciones</h3>
+          <input type="text" class="search-box" id="searchEntradasMP" placeholder="🔍 Buscar por responsable o material..." oninput="generarTablaEntradasMP()" style="margin-bottom:10px;width:100%;max-width:400px;">
+          <div style="max-height: 500px; overflow-y: auto;">
+            <table>
+              <thead><tr><th>Fecha</th><th>Material</th><th>Kilos</th><th>Responsable</th></tr></thead>
+              <tbody id="tablaEntradasMPL"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- MOVIMIENTOS DE PERFILES (ENTRADA/SALIDA) -->
+      <div id="dash_movimientos_perfiles" class="tab-content">
+        <h2>🧾 Movimientos de Perfiles (Bodega 5 / Bodega 6)</h2>
+        <div class="card">
+          <div style="display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
+            <input type="text" class="search-box" id="searchMovPerfiles" placeholder="🔍 Buscar perfil, motivo o responsable..." oninput="generarTablaMovimientosPerfiles()" style="flex:2;min-width:220px;">
+            <select id="filterTipoMovPerfil" onchange="generarTablaMovimientosPerfiles()" style="flex:1;min-width:150px;background:#0f172a;border:1px solid var(--border-color);color:var(--text);border-radius:5px;padding:6px 8px;">
+              <option value="todos">Entradas y Salidas</option>
+              <option value="ENTRADA">Solo Entradas</option>
+              <option value="SALIDA">Solo Salidas</option>
+            </select>
+          </div>
+          <div style="max-height: 550px; overflow-y: auto;">
+            <table>
+              <thead><tr><th>Fecha</th><th>Tipo</th><th>Motivo</th><th>Perfil</th><th>Cantidad</th><th>Responsable</th></tr></thead>
+              <tbody id="tablaMovPerfilesL"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. PRODUCCIÓN MÁQUINAS -->
+      <div id="dash_produccion" class="tab-content">
+        <h2>🏭 Producción por Máquinas</h2>
+        <div class="chart-grid" style="grid-template-columns: 1fr 2fr;">
+          <div class="card">
+            <h3 style="text-align: center;">Participación de Maquinaria</h3>
+            <div class="pie-container"><canvas id="chartMaquinas"></canvas></div>
+          </div>
+          <div class="card">
+            <h3>Últimos 100 Registros de Producción</h3>
+            <div style="max-height: 300px; overflow-y: auto;">
+              <table>
+                <thead><tr><th>Fecha</th><th>Jornada</th><th>Máquina</th><th>Operario</th><th>Producido</th></tr></thead>
+                <tbody id="tablaProduccionL"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MATERIAL AGLUTINADO -->
+      <div id="dash_aglutinado" class="tab-content">
+        <h2>♻️ Material Aglutinado</h2>
+        <div class="card">
+          <h3 style="color:#a855f7;">Total Producido</h3>
+          <div class="metric-value" id="aglTotalKg" style="font-size:2rem;">0.0 Kg</div>
+          <div id="aglResumenMezclas" style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;"></div>
+        </div>
+        <div class="card">
+          <h3>Historial de Producción Aglutinado</h3>
+          <div style="max-height: 500px; overflow-y: auto;">
+            <table>
+              <thead><tr><th>Fecha</th><th>Máquina</th><th>Receta</th><th>Kilos</th><th>Operario</th></tr></thead>
+              <tbody id="tablaAglutinadoL"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. ENSAMBLE & CORTE -->
+      <div id="dash_ensamble" class="tab-content">
+        <h2>🔨 Registro de Ensamble y Corte</h2>
+        <div class="chart-grid">
+          <div class="card">
+            <h3 style="color: #f59e0b;">Últimos Ensambles Realizados</h3>
+            <div style="max-height: 350px; overflow-y: auto;">
+              <table>
+                <thead><tr><th>Fecha</th><th>OP</th><th>Producto</th><th>Operarios</th><th>Unidades</th></tr></thead>
+                <tbody id="tablaEnsambleL"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <h3 style="color: #a855f7;">Historial de Corte (Mermas)</h3>
+            <div style="max-height: 350px; overflow-y: auto;">
+              <table>
+                <thead><tr><th>Fecha</th><th>Operario</th><th>Perfil Entrada</th><th>Perfil Salida</th><th>Merma</th></tr></thead>
+                <tbody id="tablaCorteL"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. LOGÍSTICA Y OPs -->
+      <div id="dash_ops" class="tab-content">
+        <h2>📋 Control de Órdenes de Producción (OP) y Logística</h2>
+        <div class="chart-grid" style="grid-template-columns: 1fr 3fr;">
+          <div class="card">
+            <h3 style="text-align: center;">Estado Global de OPs</h3>
+            <div class="pie-container"><canvas id="chartOPs"></canvas></div>
+          </div>
+          <div class="card">
+            <h3>Despachos Recientes a Clientes</h3>
+            <div style="max-height: 300px; overflow-y: auto;">
+              <table>
+                <thead><tr><th>Fecha / OP</th><th>Cliente</th><th>Transportador / Placa</th><th>Producto</th><th>Enviado</th></tr></thead>
+                <tbody id="tablaDespachosL"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card">
+          <h3 style="color: #10b981;">Monitor de Órdenes Activas</h3>
+          <div style="max-height: 400px; overflow-y: auto;">
+            <table>
+              <thead><tr><th>OP</th><th>Producto</th><th>Meta Solicitada</th><th>Fabricadas</th><th>Faltan</th><th>Estado Actual</th></tr></thead>
+              <tbody id="tablaMonitorOPL"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- MANTENIMIENTO -->
+      <div id="dash_mantenimiento" class="tab-content">
+        <h2>🔧 Visor de Máquinas y Mantenimiento</h2>
+        <div id="resumenEstadoMaquinasL" style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;"></div>
+        <div class="maquinas-grid" id="maquinasGridL"></div>
+        <div class="card" style="margin-top:15px;">
+          <h3>Historial de Mantenimientos</h3>
+          <div style="display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
+            <input type="text" class="search-box" id="searchMantL" placeholder="🔍 Buscar componente, detalle o responsable..." oninput="generarTablaMantenimientos()" style="flex:2;min-width:220px;">
+            <select id="filterMaquinaMantL" onchange="generarTablaMantenimientos()" style="flex:1;min-width:150px;background:#0f172a;border:1px solid var(--border-color);color:var(--text);border-radius:5px;padding:6px 8px;"><option value="todos">Todas las Máquinas</option></select>
+          </div>
+          <div style="max-height: 400px; overflow-y: auto;">
+            <table>
+              <thead><tr><th>Fecha</th><th>Máquina</th><th>Componente</th><th>Acción</th><th>Detalle</th><th>Responsable</th></tr></thead>
+              <tbody id="tablaMantL"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. KARDEX INVENTARIO -->
+      <div id="dash_kardex" class="tab-content">
+        <h2>📦 Visor de Inventario Kardex</h2>
+        <div class="chart-grid">
+          <div class="card">
+            <h3 style="color: #10b981;">Kardex Perfiles (Bodegas)</h3>
+            <div style="max-height: 500px; overflow-y: auto;">
+              <table>
+                <thead><tr><th>Referencia</th><th>Entradas</th><th>Salidas</th><th>Stock Real</th></tr></thead>
+                <tbody id="tablaKardexPerfilesL"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <h3 style="color: #0284c7;">Kardex Producto Terminado</h3>
+            <div style="max-height: 500px; overflow-y: auto;">
+              <table>
+                <thead><tr><th>OP</th><th>Producto Terminado</th><th>Fabricadas</th><th>Despachadas</th><th>Stock en Nave</th></tr></thead>
+                <tbody id="tablaKardexPTL"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STOCK MERMAS FÍSICAS (TORTA) -->
+      <div id="dash_mermas" class="tab-content">
+        <h2>🗑️ Stock de Mermas Físicas (Torta)</h2>
+        <div class="chart-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+          <div class="card"><small style="color:#ef4444;">Torta Generada</small><div class="metric-value" id="mermaGeneradaVal">0.0 Kg</div></div>
+          <div class="card"><small style="color:#38bdf8;">Torta Molida (Molino 1)</small><div class="metric-value" id="mermaMolidaVal">0.0 Kg</div></div>
+          <div class="card"><small style="color:#f59e0b;">Stock Pendiente por Moler</small><div class="metric-value" id="mermaStockVal">0.0 Kg</div></div>
+        </div>
+        <div class="card">
+          <h3>Historial de Mermas</h3>
+          <div style="max-height: 500px; overflow-y: auto;">
+            <table>
+              <thead><tr><th>Fecha</th><th>Área</th><th>Detalle</th><th>Torta Generada</th><th>Torta Molida</th></tr></thead>
+              <tbody id="tablaMermasL"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- LIBRO ÚNICO DE MOVIMIENTOS -->
+      <div id="dash_libro" class="tab-content">
+        <h2>📜 Libro Único de Movimientos</h2>
+        <div class="card">
+          <div style="display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
+            <input type="text" class="search-box" id="searchLibro" placeholder="🔍 Buscar folio, referencia, motivo o responsable..." oninput="generarLibroMovimientos()" style="flex:2;min-width:220px;">
+          </div>
+          <div style="max-height: 600px; overflow-y: auto;">
+            <table>
+              <thead><tr><th>Folio</th><th>Fecha</th><th>Tipo</th><th>Motivo</th><th>Referencia</th><th>Cantidad</th><th>Responsable</th></tr></thead>
+              <tbody id="tablaLibroL"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- DESEMPEÑO DE TRABAJADORES -->
+      <div id="dash_desempeno" class="tab-content">
+        <h2>🏆 Desempeño y Eficiencia de Trabajadores</h2>
+        <p style="color:var(--text-muted); font-size:.8rem; margin-top:-10px;">Calculado sobre el rango de fechas seleccionado en el filtro superior.</p>
+        <div class="card">
+          <div style="max-height: 600px; overflow-y: auto;">
+            <table>
+              <thead><tr><th>Trabajador</th><th>Kg Producidos</th><th>Estibas Armadas</th><th>Días Trabajados</th><th>Promedio Kg/Día</th></tr></thead>
+              <tbody id="tablaDesempenoL"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- EFICIENCIA DE MÁQUINAS -->
+      <div id="dash_eficiencia" class="tab-content">
+        <h2>⚙️ Eficiencia y Estado de Máquinas</h2>
+        <p style="color:var(--text-muted); font-size:.8rem; margin-top:-10px;">Producción y merma calculadas sobre el rango de fechas seleccionado en el filtro superior.</p>
+        <div class="card">
+          <div style="max-height: 600px; overflow-y: auto;">
+            <table>
+              <thead><tr><th>Máquina</th><th>Estado</th><th>Kg Producidos</th><th>Merma (Kg)</th><th>% Merma</th><th>Último Mantenimiento</th><th>Componentes por Revisar</th></tr></thead>
+              <tbody id="tablaEficienciaL"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SISTEMA: CATÁLOGOS -->
+      <div id="dash_sistema" class="tab-content">
+        <h2>🗂️ Catálogos y Directorios (Solo Lectura)</h2>
+        <div class="chart-grid">
+          <div class="card">
+            <h3 style="color:#10b981;">Trabajadores (<span id="totTrabajadoresL">0</span>)</h3>
+            <div style="max-height: 350px; overflow-y: auto;"><table><thead><tr><th>#</th><th>Nombre</th></tr></thead><tbody id="tablaTrabajadoresL"></tbody></table></div>
+          </div>
+          <div class="card">
+            <h3 style="color:#38bdf8;">Catálogo de Perfiles (<span id="totPerfilesL">0</span>)</h3>
+            <div style="max-height: 350px; overflow-y: auto;"><table><thead><tr><th>Perfil</th><th>Peso Sin Cortar</th><th>Peso Cortado</th></tr></thead><tbody id="tablaCatPerfilesL"></tbody></table></div>
+          </div>
+        </div>
+        <div class="chart-grid">
+          <div class="card">
+            <h3 style="color:#f59e0b;">Catálogo de Producto Terminado (<span id="totPTL">0</span>)</h3>
+            <div style="max-height: 350px; overflow-y: auto;"><table><thead><tr><th>Producto</th></tr></thead><tbody id="tablaCatPTL"></tbody></table></div>
+          </div>
+          <div class="card">
+            <h3 style="color:#a855f7;">Clientes (<span id="totClientesL">0</span>) y Transportadores (<span id="totTransL">0</span>)</h3>
+            <div style="max-height: 350px; overflow-y: auto;"><table><thead><tr><th>Clientes</th><th>Transportadores</th></tr></thead><tbody id="tablaDirectorioL"></tbody></table></div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    // ======= CONFIGURACIÓN FIREBASE =======
+    const firebaseConfig={apiKey:"AIzaSyDpktnw8GVRqmklw9IkD2XuOu_3Uw3aMFc",authDomain:"gestion-de-planta-gpc.firebaseapp.com",projectId:"gestion-de-planta-gpc",storageBucket:"gestion-de-planta-gpc.firebasestorage.app",messagingSenderId:"39684657325",appId:"1:39684657325:web:6812632de4438903773624",measurementId:"G-222MV7FD89"};
+    firebase.initializeApp(firebaseConfig); const db=firebase.firestore();
+
+    // ======= VARIABLES GLOBALES =======
+    let registrosProduccion = [], registrosMP = [], registrosMovimientos = [], registrosCorte = [];
+    let registrosEnsamble = [], registrosDespachosPT = [], dbOrdenesProduccion = [];
+    let DB_PERFILES = [], PRODUCTOS_TERMINADOS_CATALOGO = [];
+    let dbPerfilesNube = [], listaTrabajadores = [], dbClientes = [], dbTransportadores = [];
+    let dbEstadoMaquinasNube = {}, dbFichasMaquinas = {}, registrosMantenimientos = [];
+
+    // Contenedores de gráficos para destruirlos antes de actualizar
+    let grafTrabajadores = null, grafEnsambladores = null, grafTurnos = null, grafMaquinas = null, grafOPs = null;
+
+    // Configuración general para Chart.js
+    Chart.defaults.color = '#f8fafc';
+    Chart.defaults.font.family = 'Segoe UI';
+
+    const MAQUINAS_MAP = {
+      'ag1': { nombre:'Aglutinadora 1' }, 'ag2': { nombre:'Aglutinadora 2' }, 'ag3': { nombre:'Aglutinadora 3' },
+      'mol1': { nombre:'Molino 1' }, 'mol2': { nombre:'Molino 2' }, 'guil': { nombre:'Guillotina' },
+      'ext1': { nombre:'Extrusora Principal' }, 'bit1': { nombre:'Bitruder 1' }
+    };
+
+    // ================= MANTENIMIENTO (mismo modelo que el sistema principal) =================
+    const MANTENIMIENTO_MAQUINAS = ['Aglutinadora 1','Aglutinadora 2','Aglutinadora 3','Molino 1','Molino 2','Extrusora Principal','Bitruder 1','Guillotina','Sierra'];
+    const MANTENIMIENTO_COMPONENTES_BASE = ['Motor','Correas','Mantenimiento General'];
+    const MANTENIMIENTO_COMPONENTES_EXTRA = {
+      'Molino 1': ['Cuchillas Afiladas','Panel Eléctrico','Botones de Emergencia'],
+      'Molino 2': ['Cuchillas Afiladas','Panel Eléctrico','Botones de Emergencia'],
+      'Extrusora Principal': ['Aceite de Motor','Aceite Hidráulico','Correa de Alimentador','Resistencias Eléctricas','Partes Mecánicas'],
+      'Bitruder 1': ['Aceite de Motor','Aceite Hidráulico','Correa de Alimentador','Resistencias Eléctricas','Partes Mecánicas'],
+      'Guillotina': ['Aceite Hidráulico','Mangueras'],
+      'Sierra': ['Discos de Corte']
+    };
+    function obtenerComponentesMaquina(m) { return [...MANTENIMIENTO_COMPONENTES_BASE, ...(MANTENIMIENTO_COMPONENTES_EXTRA[m] || [])]; }
+
+    // ================= FILTRO GLOBAL DE FECHAS =================
+    let filtroActivo = false, filtroDesde = '', filtroHasta = '';
+    function obtenerRangoActivo() {
+      if(filtroActivo) return { desde: filtroDesde, hasta: filtroHasta };
+      const hoy = new Date().toISOString().split('T')[0];
+      const mesActual = hoy.substring(0,7);
+      return { desde: `${mesActual}-01`, hasta: hoy };
+    }
+    function enRango(fecha) { const r = obtenerRangoActivo(); const f = String(fecha||''); return f >= r.desde && f <= r.hasta; }
+    function aplicarFiltroFechas() {
+      const d = document.getElementById('filtroDesde').value, h = document.getElementById('filtroHasta').value;
+      if(!d || !h) { alert('Selecciona ambas fechas (Desde y Hasta).'); return; }
+      if(d > h) { alert('La fecha "Desde" no puede ser mayor que "Hasta".'); return; }
+      filtroActivo = true; filtroDesde = d; filtroHasta = h;
+      document.getElementById('estadoFiltroActivo').textContent = `📌 Filtro activo: ${d} → ${h}`;
+      procesarDatos();
+    }
+    function limpiarFiltroFechas() {
+      filtroActivo = false; filtroDesde = ''; filtroHasta = '';
+      document.getElementById('estadoFiltroActivo').textContent = '';
+      const r = obtenerRangoActivo();
+      document.getElementById('filtroDesde').value = r.desde;
+      document.getElementById('filtroHasta').value = r.hasta;
+      procesarDatos();
+    }
+
+    // Manejo de Interfaz
+    function toggleMenu() { document.querySelector('.sidebar').classList.toggle('open'); document.getElementById('overlayMobile').classList.toggle('open'); }
+    function switchMainTab(btn, tabId) {
+      document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
+      document.querySelectorAll('.sidebar-item-btn').forEach(el=>el.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      btn.classList.add('active');
+      if(window.innerWidth <= 900) { toggleMenu(); }
+    }
+
+    function fError(err){ console.error("Firebase Error:", err); }
+
+    // ======= LECTURAS FIREBASE EN TIEMPO REAL =======
+    db.collection('ordenes_produccion').onSnapshot(s=>{ let t=[]; s.forEach(d=>t.push({id:d.id,...d.data()})); dbOrdenesProduccion=t; procesarDatos(); }, fError);
+    db.collection('produccion').onSnapshot(s=>{ let t=[]; s.forEach(d=>t.push({id:d.id,...d.data()})); registrosProduccion=t; procesarDatos(); }, fError);
+    db.collection('materia_prima').onSnapshot(s=>{ let t=[]; s.forEach(d=>t.push({id:d.id,...d.data()})); registrosMP=t; procesarDatos(); }, fError);
+    db.collection('movimientos').onSnapshot(s=>{ let t=[]; s.forEach(d=>t.push({id:d.id,...d.data()})); registrosMovimientos=t; procesarDatos(); }, fError);
+    db.collection('corte_procesos').onSnapshot(s=>{ let t=[]; s.forEach(d=>t.push({id:d.id,...d.data()})); registrosCorte=t; procesarDatos(); }, fError);
+    db.collection('ensamble_procesos').onSnapshot(s=>{ let t=[]; s.forEach(d=>t.push({id:d.id,...d.data()})); registrosEnsamble=t; procesarDatos(); }, fError);
+    db.collection('despachos_pt').onSnapshot(s=>{ let t=[]; s.forEach(d=>t.push({id:d.id,...d.data()})); registrosDespachosPT=t; procesarDatos(); }, fError);
+    db.collection('perfiles').onSnapshot(s=>{ let t=[]; s.forEach(d=>t.push({docId:d.id,...d.data()})); dbPerfilesNube=t.sort((a,b)=>(a.id||0)-(b.id||0)); DB_PERFILES=dbPerfilesNube.map(p=>p.nombre); procesarDatos(); }, fError);
+    db.collection('trabajadores').onSnapshot(s=>{ let t=[]; s.forEach(d=>t.push({id:d.id,nombre:d.data().nombre||'Desconocido'})); listaTrabajadores=t.sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre))); procesarDatos(); }, fError);
+    db.collection('clientes').onSnapshot(s=>{ let t=[]; s.forEach(d=>t.push({id:d.id,...d.data()})); dbClientes=t; procesarDatos(); }, fError);
+    db.collection('transportadores').onSnapshot(s=>{ let t=[]; s.forEach(d=>t.push({id:d.id,...d.data()})); dbTransportadores=t; procesarDatos(); }, fError);
+    db.collection('estado_maquinas').onSnapshot(s=>{ dbEstadoMaquinasNube={}; s.forEach(d=>{ dbEstadoMaquinasNube[d.id]=d.data().operativa; }); procesarDatos(); }, fError);
+    db.collection('mantenimientos').onSnapshot(s=>{ let t=[]; s.forEach(d=>t.push({id:d.id,...d.data()})); registrosMantenimientos=t; procesarDatos(); }, fError);
+    db.collection('fichas_maquinas').onSnapshot(s=>{ dbFichasMaquinas={}; s.forEach(d=>{ dbFichasMaquinas[d.id]=d.data(); }); procesarDatos(); }, fError);
+    db.collection('productos_terminados').onSnapshot(s=>{ let t=[]; s.forEach(d=>t.push(d.data().nombre)); PRODUCTOS_TERMINADOS_CATALOGO=t; procesarDatos(); }, fError);
+
+    // ======= MOTOR DE PROCESAMIENTO =======
+    // Esta función central se llama cada vez que llega un dato de Firebase
+    function procesarDatos() {
+      const mesActual = new Date().toISOString().substring(0,7); // Ej: "2026-08"
+      const hoy = new Date().toISOString().split('T')[0];
+
+      // 1. ACTUALIZAR TARJETAS SUPERIORES GLOBALES
+      let sumMP = 0; registrosMP.forEach(m=> sumMP+=(parseFloat(m.cantidad)||0));
+      registrosMovimientos.forEach(m=>{ if((m.referencia||'').toUpperCase().includes('MATERIA PRIMA') && m.tipo==='ENTRADA' && registrosMP.length===0) sumMP+=(parseFloat(m.cantidad)||0); });
+      registrosProduccion.forEach(p=>{ if((p.maquina||'').includes('Aglutinadora')){ sumMP -= ((parseFloat(p.cantidad)||0)+(parseFloat(p.merma)||0)); }});
+      document.getElementById('totalStockMP').textContent = `${sumMP.toFixed(1)} Kg`;
+
+      let sumMerma = 0;
+      registrosProduccion.forEach(r => { if(enRango(r.fecha)) sumMerma += (parseFloat(r.merma) || 0); });
+      registrosCorte.forEach(c => { if(enRango(c.fecha)) sumMerma += (parseFloat(c.mermaCorte) || 0); });
+      document.getElementById('totalMerma').textContent = `${sumMerma.toFixed(1)} Kg`;
+
+      // 2. RESUMEN RAPIDO DE HOY
+      let kgHoy=0, estibasHoy=0, despachosHoy=0;
+      registrosProduccion.forEach(r=>{ if(r.fecha===hoy) kgHoy+=(parseFloat(r.cantidad)||0); });
+      registrosEnsamble.forEach(e=>{ if(e.fecha===hoy) estibasHoy+=(parseFloat(e.cantRealizada)||0); });
+      registrosDespachosPT.forEach(d=>{ if(d.fecha===hoy) despachosHoy+=(parseFloat(d.cantEnviada)||0); });
+      document.getElementById('resumenHoyRapido').innerHTML = `
+        <span style="color:#38bdf8">▶ Kilos Producidos Hoy:</span> <strong>${kgHoy.toFixed(1)} Kg</strong><br>
+        <span style="color:#f59e0b">▶ Estibas Ensambladas:</span> <strong>${estibasHoy} u</strong><br>
+        <span style="color:#0284c7">▶ Despachos Logística:</span> <strong>${despachosHoy} u</strong>
+      `;
+
+      // 3. GENERAR TABLAS DE SOLO LECTURA
+      generarTablaProduccion();
+      generarTablaEnsamble();
+      generarTablaCorte();
+      generarTablaDespachos();
+      generarMonitorOPs();
+      generarKardex();
+      generarTablaEntradasMP();
+      generarTablaMovimientosPerfiles();
+      generarAglutinado();
+      generarVisorMaquinasL();
+      generarTablaMantenimientos();
+      generarTablaMermas();
+      generarLibroMovimientos();
+      generarTablaDesempeno();
+      generarTablaEficiencia();
+      generarSistema();
+
+      // 4. DIBUJAR GRÁFICOS INTELIGENTES (Solo mes actual para operarios)
+      dibujarGraficos();
+    }
+
+    // ================= FUNCIONES DE TABLAS =================
+    function generarTablaProduccion() {
+      const tb = document.getElementById('tablaProduccionL'); tb.innerHTML = '';
+      const cop = registrosProduccion.filter(r => enRango(r.fecha)).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))).slice(0, 150);
+      cop.forEach(r => {
+        const jc = r.jornada==='DIA'?'badge-dia':'badge-noche';
+        const dCant = r.unidades>0 ? `${r.unidades}u (${r.cantidad}Kg)` : `${r.cantidad}Kg`;
+        tb.innerHTML += `<tr><td><small>${r.fecha}</small></td><td><span class="badge ${jc}">${r.jornada}</span></td><td><small>${r.maquina}</small></td><td><strong>${r.operario}</strong></td><td><strong style="color:#10b981">${dCant}</strong></td></tr>`;
+      });
+      if(cop.length === 0) tb.innerHTML = '<tr><td colspan="5" style="text-align:center;">Sin registros en el rango seleccionado.</td></tr>';
+    }
+
+    function generarTablaEnsamble() {
+      const tb = document.getElementById('tablaEnsambleL'); tb.innerHTML = '';
+      const cop = registrosEnsamble.filter(e => enRango(e.fecha)).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))).slice(0, 100);
+      cop.forEach(e => {
+        tb.innerHTML += `<tr><td><small>${e.fecha}</small></td><td><strong style="color:#f59e0b">${e.ordenTrabajo}</strong></td><td><small>${e.productoTerminado}</small></td><td>${e.operario}</td><td><span class="badge badge-prod">+${e.cantRealizada} u</span></td></tr>`;
+      });
+      if(cop.length === 0) tb.innerHTML = '<tr><td colspan="5" style="text-align:center;">Sin registros en el rango seleccionado.</td></tr>';
+    }
+
+    function generarTablaCorte() {
+      const tb = document.getElementById('tablaCorteL'); tb.innerHTML = '';
+      const cop = registrosCorte.filter(c => enRango(c.fecha)).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))).slice(0, 100);
+      cop.forEach(c => {
+        tb.innerHTML += `<tr><td><small>${c.fecha}</small></td><td>${c.operario}</td><td><small>${c.cantOrigen}u de ${c.perfilOrigen}</small></td><td><small>${c.cantDestino}u de ${c.perfilDestino}</small></td><td><strong style="color:#ef4444">${(parseFloat(c.mermaCorte)||0).toFixed(1)} Kg</strong></td></tr>`;
+      });
+      if(cop.length === 0) tb.innerHTML = '<tr><td colspan="5" style="text-align:center;">Sin registros en el rango seleccionado.</td></tr>';
+    }
+
+    function generarTablaDespachos() {
+      const tb = document.getElementById('tablaDespachosL'); tb.innerHTML = '';
+      const cop = registrosDespachosPT.filter(d => enRango(d.fecha)).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))).slice(0, 100);
+      cop.forEach(d => {
+        tb.innerHTML += `<tr><td><small>${d.fecha}</small><br><strong style="color:#f59e0b">${d.ordenTrabajo}</strong></td><td>${d.cliente||'N/A'}</td><td><small>${d.transportador}<br>${d.placa}</small></td><td><small>${d.productoTerminado}</small></td><td><span class="badge badge-merma">-${d.cantEnviada} u</span></td></tr>`;
+      });
+      if(cop.length === 0) tb.innerHTML = '<tr><td colspan="5" style="text-align:center;">Sin registros en el rango seleccionado.</td></tr>';
+    }
+
+    // ================= NUEVAS TABLAS: ENTRADAS / MOVIMIENTOS / AGLUTINADO =================
+    function generarTablaEntradasMP() {
+      const tb = document.getElementById('tablaEntradasMPL'); if(!tb) return; tb.innerHTML = '';
+      const b = (document.getElementById('searchEntradasMP')?.value || '').toLowerCase().trim();
+      let l = 0, pp = 0, o = 0;
+      const cop = registrosMP.filter(m => enRango(m.fecha) && `${m.material} ${m.responsable}`.toLowerCase().includes(b)).sort((a,b2)=>String(b2.fecha).localeCompare(String(a.fecha)));
+      cop.forEach(m => {
+        const mt = String(m.material||'').toLowerCase(), c = parseFloat(m.cantidad)||0;
+        if(mt.includes('laminado')) l += c; else if(mt.includes('p.p') || mt.includes('pp')) pp += c; else o += c;
+        tb.innerHTML += `<tr><td><small>${m.fecha}</small></td><td><strong>${m.material}</strong></td><td><strong style="color:#10b981">+${c.toFixed(1)} Kg</strong></td><td>${m.responsable||''}</td></tr>`;
+      });
+      if(cop.length === 0) tb.innerHTML = '<tr><td colspan="4" style="text-align:center;">Sin registros en el rango seleccionado.</td></tr>';
+      const dL = document.getElementById('mpTotLaminado'); if(dL) dL.textContent = `${l.toFixed(1)} Kg`;
+      const dP = document.getElementById('mpTotPP'); if(dP) dP.textContent = `${pp.toFixed(1)} Kg`;
+      const dO = document.getElementById('mpTotOtros'); if(dO) dO.textContent = `${o.toFixed(1)} Kg`;
+    }
+
+    function generarTablaMovimientosPerfiles() {
+      const tb = document.getElementById('tablaMovPerfilesL'); if(!tb) return; tb.innerHTML = '';
+      const b = (document.getElementById('searchMovPerfiles')?.value || '').toLowerCase().trim();
+      const tipoF = document.getElementById('filterTipoMovPerfil')?.value || 'todos';
+      const cop = registrosMovimientos.filter(m => enRango(m.fecha) && !String(m.referencia||'').toUpperCase().includes('MATERIA PRIMA') && (tipoF === 'todos' || m.tipo === tipoF) && `${m.motivo} ${m.referencia} ${m.responsable}`.toLowerCase().includes(b)).sort((a,b2)=>String(b2.fecha).localeCompare(String(a.fecha)));
+      cop.forEach(m => {
+        const esEnt = m.tipo === 'ENTRADA';
+        tb.innerHTML += `<tr><td><small>${m.fecha}</small></td><td><span class="badge ${esEnt?'badge-prod':'badge-merma'}">${m.tipo}</span></td><td><small>${m.motivo||''}</small></td><td><small style="color:#6366f1">${m.referencia||''}</small></td><td><strong style="color:${esEnt?'#10b981':'#ef4444'}">${esEnt?'+':'-'}${m.cantidad||0}</strong></td><td>${m.responsable||''}</td></tr>`;
+      });
+      if(cop.length === 0) tb.innerHTML = '<tr><td colspan="6" style="text-align:center;">Sin registros en el rango seleccionado.</td></tr>';
+    }
+
+    function generarAglutinado() {
+      const tb = document.getElementById('tablaAglutinadoL'); if(!tb) return; tb.innerHTML = '';
+      let tot=0, m7030=0, m5050=0, m100L=0, m100P=0, mOtros=0;
+      const cop = registrosProduccion.filter(r => enRango(r.fecha) && String(r.maquina||'').includes('Aglutinadora')).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
+      cop.forEach(r => {
+        const kg = parseFloat(r.cantidad)||0; tot += kg;
+        const rec = String(r.receta||'').toLowerCase();
+        if(rec.includes('70/30')) m7030+=kg; else if(rec.includes('50/50')) m5050+=kg; else if(rec.includes('laminado')) m100L+=kg; else if(rec.includes('p.p')||rec.includes('pp')) m100P+=kg; else mOtros+=kg;
+        tb.innerHTML += `<tr><td><small>${r.fecha}</small></td><td><strong>${r.maquina}</strong></td><td><span class="badge" style="background:rgba(59,130,246,0.2);color:#38bdf8;">${r.receta||''}</span></td><td><strong style="color:#a855f7;">${kg.toFixed(1)} Kg</strong></td><td><small>${r.operario}</small></td></tr>`;
+      });
+      if(cop.length === 0) tb.innerHTML = '<tr><td colspan="5" style="text-align:center;">Sin registros en el rango seleccionado.</td></tr>';
+      const dT = document.getElementById('aglTotalKg'); if(dT) dT.textContent = `${tot.toFixed(1)} Kg`;
+      const rMez = document.getElementById('aglResumenMezclas');
+      if(rMez) rMez.innerHTML = `<div style="flex:1;min-width:120px;background:#0f172a;padding:10px;border-radius:6px;border-left:3px solid #38bdf8;"><small>70/30</small><div style="font-weight:bold;color:#38bdf8;">${m7030.toFixed(1)} Kg</div></div><div style="flex:1;min-width:120px;background:#0f172a;padding:10px;border-radius:6px;border-left:3px solid #10b981;"><small>50/50</small><div style="font-weight:bold;color:#10b981;">${m5050.toFixed(1)} Kg</div></div><div style="flex:1;min-width:120px;background:#0f172a;padding:10px;border-radius:6px;border-left:3px solid #f59e0b;"><small>100% Laminado</small><div style="font-weight:bold;color:#f59e0b;">${m100L.toFixed(1)} Kg</div></div><div style="flex:1;min-width:120px;background:#0f172a;padding:10px;border-radius:6px;border-left:3px solid #ef4444;"><small>100% P.P</small><div style="font-weight:bold;color:#ef4444;">${m100P.toFixed(1)} Kg</div></div>`;
+    }
+
+    // ================= MANTENIMIENTO =================
+    function generarVisorMaquinasL() {
+      const g = document.getElementById('maquinasGridL'); if(!g) return;
+      const hoy = new Date();
+      const operativas = MANTENIMIENTO_MAQUINAS.filter(m => dbEstadoMaquinasNube[m] !== false).length;
+      const rs = document.getElementById('resumenEstadoMaquinasL');
+      if(rs) rs.innerHTML = `<div style="background:rgba(16,185,129,.15);border:1px solid var(--success);border-radius:6px;padding:6px 12px;font-size:.8rem;">🟢 <strong>${operativas}</strong> Operativas</div><div style="background:rgba(239,68,68,.15);border:1px solid var(--danger);border-radius:6px;padding:6px 12px;font-size:.8rem;">🔴 <strong>${MANTENIMIENTO_MAQUINAS.length-operativas}</strong> Dañadas</div>`;
+
+      g.innerHTML = MANTENIMIENTO_MAQUINAS.map(m => {
+        const operativa = dbEstadoMaquinasNube[m] !== false;
+        const ficha = dbFichasMaquinas[m] || { componentes: {}, observacionGeneral: '' };
+        const filas = obtenerComponentesMaquina(m).map(c => {
+          const fc = ficha.componentes?.[c] || { estado: 'OK', referencia: '' };
+          return `<div class="comp-row"><span>${c}${fc.referencia ? ` <small style="color:var(--text-muted);">(${fc.referencia})</small>` : ''}</span><span class="comp-estado ${fc.estado||'OK'}">${fc.estado||'OK'}</span></div>`;
+        }).join('');
+        return `<div class="maquina-card"><h4>⚙️ ${m} <span class="estado-pill ${operativa?'op':'da'}">${operativa?'🟢 Funcionando':'🔴 Dañada'}</span></h4>${filas}<div class="obs-box">${ficha.observacionGeneral ? String(ficha.observacionGeneral).replace(/</g,'&lt;') : 'Sin observaciones.'}</div></div>`;
+      }).join('');
+
+      const fil = document.getElementById('filterMaquinaMantL');
+      if(fil && fil.options.length === 1) { MANTENIMIENTO_MAQUINAS.forEach(m => { const o = document.createElement('option'); o.value = m; o.textContent = m; fil.appendChild(o); }); }
+    }
+
+    function generarTablaMantenimientos() {
+      const tb = document.getElementById('tablaMantL'); if(!tb) return; tb.innerHTML = '';
+      const b = (document.getElementById('searchMantL')?.value || '').toLowerCase().trim();
+      const fm = document.getElementById('filterMaquinaMantL')?.value || 'todos';
+      const arr = [...registrosMantenimientos].filter(r => (fm==='todos'||r.maquina===fm) && `${r.componente} ${r.detalle} ${r.responsable}`.toLowerCase().includes(b)).sort((a,b2)=>String(b2.fecha||'').localeCompare(String(a.fecha||'')));
+      arr.forEach(r => { tb.innerHTML += `<tr><td><small>${r.fecha||''}</small></td><td>${r.maquina||''}</td><td>${r.componente||''}</td><td><small>${r.tipo||''}</small></td><td><small>${r.detalle||''}</small></td><td>${r.responsable||''}</td></tr>`; });
+      if(arr.length===0) tb.innerHTML = '<tr><td colspan="6" style="text-align:center;">Sin registros de mantenimiento.</td></tr>';
+    }
+
+    // ================= STOCK MERMAS FÍSICAS (TORTA) =================
+    function generarTablaMermas() {
+      const tb = document.getElementById('tablaMermasL'); if(!tb) return; tb.innerHTML = '';
+      let generadas = 0, molidas = 0; const filas = [];
+      registrosProduccion.forEach(r => {
+        const m = parseFloat(r.merma)||0;
+        if(m > 0 && r.maquina !== 'Molino 1') { generadas += m; filas.push({fecha:r.fecha, area:r.maquina||'Producción', detalle:r.operario||'', gen:m, mol:0}); }
+        if(r.maquina === 'Molino 1') { const k = parseFloat(r.cantidad)||0; if(k>0) { molidas += k; filas.push({fecha:r.fecha, area:'Molino 1', detalle:r.operario||'', gen:0, mol:k}); } }
+      });
+      registrosCorte.forEach(c => { const m = parseFloat(c.mermaCorte)||0; if(m>0) { generadas += m; filas.push({fecha:c.fecha, area:'Mesa de Corte', detalle:c.operario||'', gen:m, mol:0}); } });
+      filas.sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||'')));
+      filas.forEach(f => { tb.innerHTML += `<tr><td><small>${f.fecha||''}</small></td><td>${f.area}</td><td>${f.detalle}</td><td style="color:#ef4444;">${f.gen>0?f.gen.toFixed(2)+' Kg':'-'}</td><td style="color:#38bdf8;">${f.mol>0?f.mol.toFixed(2)+' Kg':'-'}</td></tr>`; });
+      if(filas.length===0) tb.innerHTML = '<tr><td colspan="5" style="text-align:center;">Sin registros de merma.</td></tr>';
+      const dG = document.getElementById('mermaGeneradaVal'); if(dG) dG.textContent = `${generadas.toFixed(1)} Kg`;
+      const dM = document.getElementById('mermaMolidaVal'); if(dM) dM.textContent = `${molidas.toFixed(1)} Kg`;
+      const dS = document.getElementById('mermaStockVal'); if(dS) dS.textContent = `${Math.max(0,generadas-molidas).toFixed(1)} Kg`;
+    }
+
+    // ================= LIBRO ÚNICO DE MOVIMIENTOS =================
+    function generarLibroMovimientos() {
+      const tb = document.getElementById('tablaLibroL'); if(!tb) return; tb.innerHTML = '';
+      const b = (document.getElementById('searchLibro')?.value || '').toLowerCase().trim();
+      const arr = registrosMovimientos.filter(m => enRango(m.fecha) && `${m.folio} ${m.referencia} ${m.motivo} ${m.responsable}`.toLowerCase().includes(b)).sort((a,b2)=>String(b2.fecha||'').localeCompare(String(a.fecha||'')));
+      arr.forEach(m => {
+        const esEnt = m.tipo === 'ENTRADA';
+        tb.innerHTML += `<tr><td><small>${m.folio||''}</small></td><td><small>${m.fecha||''}</small></td><td><span class="badge ${esEnt?'badge-prod':'badge-merma'}">${m.tipo||''}</span></td><td><small>${m.motivo||''}</small></td><td><small>${m.referencia||''}</small></td><td>${esEnt?'+':'-'}${m.cantidad||0}</td><td>${m.responsable||''}</td></tr>`;
+      });
+      if(arr.length===0) tb.innerHTML = '<tr><td colspan="7" style="text-align:center;">Sin movimientos en el rango seleccionado.</td></tr>';
+    }
+
+    // ================= DESEMPEÑO DE TRABAJADORES =================
+    function generarTablaDesempeno() {
+      const tb = document.getElementById('tablaDesempenoL'); if(!tb) return; tb.innerHTML = '';
+      const stats = {};
+      const ensure = (n) => { if(!stats[n]) stats[n] = { kg:0, estibas:0, dias:new Set() }; return stats[n]; };
+      registrosProduccion.filter(r => enRango(r.fecha) && !String(r.operario||'').includes('DAÑADA')).forEach(r => {
+        const ops = String(r.operario||'').split(' / ').map(o=>o.trim()).filter(Boolean);
+        if(ops.length===0) return;
+        const kgc = (parseFloat(r.cantidad)||0)/ops.length;
+        ops.forEach(o => { const s = ensure(o); s.kg += kgc; s.dias.add(r.fecha); });
+      });
+      registrosEnsamble.filter(e => enRango(e.fecha)).forEach(e => {
+        const ops = String(e.operario||'').split(' / ').map(o=>o.trim()).filter(Boolean);
+        if(ops.length===0) return;
+        const ec = (parseFloat(e.cantRealizada)||0)/ops.length;
+        ops.forEach(o => { const s = ensure(o); s.estibas += ec; s.dias.add(e.fecha); });
+      });
+      const arr = Object.entries(stats).map(([nombre, s]) => ({ nombre, kg:s.kg, estibas:s.estibas, dias:s.dias.size, prom: s.dias.size>0 ? s.kg/s.dias.size : 0 })).sort((a,b)=>b.kg-a.kg);
+      arr.forEach(a => { tb.innerHTML += `<tr><td><strong>${a.nombre}</strong></td><td style="color:#10b981;">${a.kg.toFixed(1)} Kg</td><td style="color:#f59e0b;">${a.estibas.toFixed(0)} u</td><td>${a.dias}</td><td>${a.prom.toFixed(1)} Kg</td></tr>`; });
+      if(arr.length===0) tb.innerHTML = '<tr><td colspan="5" style="text-align:center;">Sin registros en el rango seleccionado.</td></tr>';
+    }
+
+    // ================= EFICIENCIA DE MÁQUINAS =================
+    function generarTablaEficiencia() {
+      const tb = document.getElementById('tablaEficienciaL'); if(!tb) return; tb.innerHTML = '';
+      MANTENIMIENTO_MAQUINAS.forEach(m => {
+        const regs = registrosProduccion.filter(r => enRango(r.fecha) && r.maquina === m);
+        let kg = 0, merma = 0;
+        regs.forEach(r => { kg += parseFloat(r.cantidad)||0; merma += parseFloat(r.merma)||0; });
+        const pctMerma = (kg+merma) > 0 ? (merma/(kg+merma))*100 : 0;
+        const operativa = dbEstadoMaquinasNube[m] !== false;
+        const histMant = registrosMantenimientos.filter(r => r.maquina === m).sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||'')));
+        const ultMant = histMant.length ? histMant[0].fecha : 'Sin registro';
+        const ficha = dbFichasMaquinas[m] || { componentes: {} };
+        const pendientes = Object.values(ficha.componentes || {}).filter(c => c.estado && c.estado !== 'OK').length;
+        tb.innerHTML += `<tr><td><strong>${m}</strong></td><td><span class="estado-pill ${operativa?'op':'da'}">${operativa?'🟢 Operativa':'🔴 Dañada'}</span></td><td style="color:#10b981;">${kg.toFixed(1)} Kg</td><td style="color:#ef4444;">${merma.toFixed(1)} Kg</td><td>${pctMerma.toFixed(1)}%</td><td><small>${ultMant}</small></td><td>${pendientes > 0 ? `<span style="color:#f59e0b;font-weight:bold;">${pendientes}</span>` : '<span style="color:#10b981;">0</span>'}</td></tr>`;
+      });
+    }
+
+    // ================= SISTEMA: CATÁLOGOS =================
+    function generarSistema() {
+      const tt = document.getElementById('tablaTrabajadoresL');
+      if(tt) { tt.innerHTML = ''; listaTrabajadores.forEach((t,i) => { tt.innerHTML += `<tr><td>${i+1}</td><td>${t.nombre}</td></tr>`; }); document.getElementById('totTrabajadoresL').textContent = listaTrabajadores.length; }
+
+      const tp = document.getElementById('tablaCatPerfilesL');
+      if(tp) { tp.innerHTML = ''; dbPerfilesNube.forEach(p => { tp.innerHTML += `<tr><td>${p.nombre}</td><td>${(p.pesoSinCortar||0)} Kg</td><td>${(p.pesoCortado||p.pesoSinCortar||0)} Kg</td></tr>`; }); document.getElementById('totPerfilesL').textContent = dbPerfilesNube.length; }
+
+      const tpt = document.getElementById('tablaCatPTL');
+      if(tpt) { tpt.innerHTML = ''; PRODUCTOS_TERMINADOS_CATALOGO.forEach(p => { tpt.innerHTML += `<tr><td>${p}</td></tr>`; }); document.getElementById('totPTL').textContent = PRODUCTOS_TERMINADOS_CATALOGO.length; }
+
+      const td = document.getElementById('tablaDirectorioL');
+      if(td) {
+        td.innerHTML = '';
+        const max = Math.max(dbClientes.length, dbTransportadores.length);
+        for(let i=0; i<max; i++) {
+          const cli = dbClientes[i] ? dbClientes[i].nombre : '';
+          const tra = dbTransportadores[i] ? `${dbTransportadores[i].nombre} (${dbTransportadores[i].placa||''})` : '';
+          td.innerHTML += `<tr><td>${cli}</td><td>${tra}</td></tr>`;
+        }
+        document.getElementById('totClientesL').textContent = dbClientes.length;
+        document.getElementById('totTransL').textContent = dbTransportadores.length;
+      }
+    }
+
+    function generarMonitorOPs() {
+      const tb = document.getElementById('tablaMonitorOPL'); tb.innerHTML = '';
+      const mapOP = {};
+      dbOrdenesProduccion.forEach(o => { mapOP[o.codigo] = { fecha:o.fecha, codigo:o.codigo, prod:o.producto, meta:o.cantSolicitada, hechas:0, desp:0 }; });
+      registrosEnsamble.forEach(e => { const op = String(e.ordenTrabajo||'').toUpperCase(); if(mapOP[op]) mapOP[op].hechas += (parseFloat(e.cantRealizada)||0); });
+      registrosDespachosPT.forEach(d => { const op = String(d.ordenTrabajo||'').toUpperCase(); if(mapOP[op]) mapOP[op].desp += (parseFloat(d.cantEnviada)||0); });
+      
+      const arr = Object.values(mapOP).sort((a,b)=>b.fecha.localeCompare(a.fecha));
+      arr.forEach(o => {
+        const faltan = o.meta - o.hechas;
+        let st = '';
+        if(o.hechas >= o.meta) st = '<span class="badge badge-prod">COMPLETA</span>';
+        else if(o.hechas > 0) st = '<span class="badge badge-dia">PROCESO</span>';
+        else st = '<span class="badge" style="background:#475569">PENDIENTE</span>';
+        tb.innerHTML += `<tr><td><strong style="color:#f59e0b">${o.codigo}</strong></td><td><small>${o.prod}</small></td><td>${o.meta}</td><td><strong style="color:#10b981">${o.hechas}</strong></td><td style="color:#ef4444">${faltan>0?faltan:0}</td><td>${st}</td></tr>`;
+      });
+    }
+
+    function generarKardex() {
+      // Perfiles
+      const mapPer = {};
+      DB_PERFILES.forEach(p => mapPer[p.trim().toUpperCase()] = { nom:p, e:0, s:0 });
+      registrosMovimientos.forEach(m => {
+        const k = String(m.referencia||'').trim().toUpperCase();
+        if(k && !k.includes('MATERIA PRIMA')) {
+          if(!mapPer[k]) mapPer[k] = { nom:m.referencia, e:0, s:0 };
+          if(m.tipo==='ENTRADA') mapPer[k].e += (parseFloat(m.cantidad)||0); else mapPer[k].s += (parseFloat(m.cantidad)||0);
+        }
+      });
+      registrosProduccion.forEach(p=>{ if(p.referencia&&p.unidades>0){ const pr=String(p.referencia).toUpperCase(); const exists=registrosMovimientos.some(m=>String(m.referencia).toUpperCase()===pr&&m.fecha===p.fecha); if(!exists && mapPer[pr]) mapPer[pr].e+=p.unidades; }});
+      
+      let totP = 0; const tbp = document.getElementById('tablaKardexPerfilesL'); tbp.innerHTML='';
+      Object.values(mapPer).sort((a,b)=>parseInt(a.nom.match(/\d+/)||99)-parseInt(b.nom.match(/\d+/)||99)).forEach(d=>{
+        const st = d.e - d.s; totP += st;
+        if(d.e>0 || d.s>0 || st>0) tbp.innerHTML+=`<tr><td><small>${d.nom}</small></td><td style="color:#10b981">+${d.e}</td><td style="color:#ef4444">-${d.s}</td><td><span class="badge badge-stock">${st} u</span></td></tr>`;
+      });
+      document.getElementById('totalStockPerfiles').textContent = `${totP} Unid.`;
+
+      // Producto Terminado
+      const mPT = {}; let totPT = 0;
+      registrosEnsamble.forEach(e=>{ const k=`${e.ordenTrabajo}___${e.productoTerminado}`; if(!mPT[k])mPT[k]={op:e.ordenTrabajo, pt:e.productoTerminado, f:0, d:0}; mPT[k].f+=(parseFloat(e.cantRealizada)||0); });
+      registrosDespachosPT.forEach(d=>{ const k=`${d.ordenTrabajo}___${d.productoTerminado}`; if(mPT[k])mPT[k].d+=(parseFloat(d.cantEnviada)||0); });
+      const tbpt = document.getElementById('tablaKardexPTL'); tbpt.innerHTML='';
+      Object.values(mPT).forEach(d=>{
+        const st = d.f - d.d; totPT += st;
+        tbpt.innerHTML+=`<tr><td><strong style="color:#f59e0b">${d.op}</strong></td><td><small>${d.pt}</small></td><td style="color:#10b981">+${d.f}</td><td style="color:#f59e0b">-${d.d}</td><td><span class="badge badge-stock">${st} u</span></td></tr>`;
+      });
+      document.getElementById('totalStockPT').textContent = `${totPT} Unid.`;
+    }
+
+    // ================= MOTOR DE GRÁFICOS (CHART.JS) =================
+    function dibujarGraficos() {
+      // Destruir gráficos anteriores para evitar solapamiento
+      if(grafTrabajadores) grafTrabajadores.destroy();
+      if(grafEnsambladores) grafEnsambladores.destroy();
+      if(grafTurnos) grafTurnos.destroy();
+      if(grafMaquinas) grafMaquinas.destroy();
+      if(grafOPs) grafOPs.destroy();
+
+      // 1. DATA: TOP TRABAJADORES (PRODUCCIÓN KG)
+      const kilosPorOpe = {};
+      registrosProduccion.filter(r=>enRango(r.fecha) && !String(r.operario||'').includes('DAÑADA')).forEach(r => {
+        const ops = r.operario.split(' / ');
+        ops.forEach(op => { const o = op.trim(); if(!kilosPorOpe[o]) kilosPorOpe[o]=0; kilosPorOpe[o] += (parseFloat(r.cantidad)||0)/ops.length; });
+      });
+      const topOpe = Object.entries(kilosPorOpe).sort((a,b)=>b[1]-a[1]).slice(0,6);
+
+      grafTrabajadores = new Chart(document.getElementById('chartTopTrabajadores'), {
+        type: 'bar',
+        data: {
+          labels: topOpe.map(x => x[0].split(' ')[0] + ' ' + (x[0].split(' ')[1]||'')), // Nombre corto
+          datasets: [{ label: 'Kilos Fabricados', data: topOpe.map(x=>x[1].toFixed(1)), backgroundColor: '#38bdf8', borderRadius: 4 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: {display: false} } }
+      });
+
+      // 2. DATA: TOP ENSAMBLADORES (ESTIBAS)
+      const estibasPorOpe = {};
+      registrosEnsamble.filter(r=>enRango(r.fecha)).forEach(r => {
+        const ops = r.operario.split(' / ');
+        ops.forEach(op => { const o = op.trim(); if(!estibasPorOpe[o]) estibasPorOpe[o]=0; estibasPorOpe[o] += (parseFloat(r.cantRealizada)||0)/ops.length; });
+      });
+      const topEns = Object.entries(estibasPorOpe).sort((a,b)=>b[1]-a[1]).slice(0,6);
+
+      grafEnsambladores = new Chart(document.getElementById('chartTopEnsambladores'), {
+        type: 'bar',
+        data: {
+          labels: topEns.map(x => x[0].split(' ')[0] + ' ' + (x[0].split(' ')[1]||'')),
+          datasets: [{ label: 'Estibas Armadas', data: topEns.map(x=>x[1].toFixed(1)), backgroundColor: '#f59e0b', borderRadius: 4 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: {display: false} } }
+      });
+
+      // 3. DATA: TURNOS (DÍA VS NOCHE)
+      let tDia = 0, tNoche = 0;
+      registrosProduccion.filter(r=>enRango(r.fecha)).forEach(r=>{ if(r.jornada==='DIA') tDia+=(parseFloat(r.cantidad)||0); else tNoche+=(parseFloat(r.cantidad)||0); });
+      registrosEnsamble.filter(r=>enRango(r.fecha)).forEach(r=>{ const j=r.jornada||'DIA'; if(j==='DIA') tDia+=(parseFloat(r.cantRealizada)||0)*10; else tNoche+=(parseFloat(r.cantRealizada)||0)*10; }); // Ponderación visual
+      
+      grafTurnos = new Chart(document.getElementById('chartTurnos'), {
+        type: 'doughnut',
+        data: { labels: ['☀️ Día', '🌙 Noche'], datasets: [{ data: [tDia, tNoche], backgroundColor: ['#f59e0b', '#6366f1'], borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: {position: 'bottom'} }, cutout: '65%' }
+      });
+
+      // 4. DATA: PARTICIPACIÓN MÁQUINAS
+      const kgMaq = {};
+      registrosProduccion.filter(r=>enRango(r.fecha)).forEach(r=>{
+        const m = r.maquina.replace('Aglutinadora','Ag').replace('Molino','Mol').replace('Extrusora','Ext');
+        if(!kgMaq[m]) kgMaq[m]=0; kgMaq[m] += (parseFloat(r.cantidad)||0);
+      });
+      
+      grafMaquinas = new Chart(document.getElementById('chartMaquinas'), {
+        type: 'pie',
+        data: {
+          labels: Object.keys(kgMaq),
+          datasets: [{ data: Object.values(kgMaq), backgroundColor: ['#3b82f6','#10b981','#f59e0b','#ef4444','#a855f7','#6366f1'], borderWidth: 0 }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: {position: 'right'} } }
+      });
+
+      // 5. DATA: ESTADO OPs
+      let opCompletas = 0, opProceso = 0, opPendientes = 0;
+      const mapEst = {};
+      dbOrdenesProduccion.forEach(o => mapEst[o.codigo] = { m: o.cantSolicitada, h:0 });
+      registrosEnsamble.forEach(e => { const op = String(e.ordenTrabajo).toUpperCase(); if(mapEst[op]) mapEst[op].h += (parseFloat(e.cantRealizada)||0); });
+      Object.values(mapEst).forEach(o => {
+        if(o.h >= o.m && o.m > 0) opCompletas++;
+        else if(o.h > 0) opProceso++;
+        else opPendientes++;
+      });
+
+      grafOPs = new Chart(document.getElementById('chartOPs'), {
+        type: 'doughnut',
+        data: { labels: ['✅ Completas', '🟡 En Proceso', '⚪ Pendientes'], datasets: [{ data: [opCompletas, opProceso, opPendientes], backgroundColor: ['#10b981', '#f59e0b', '#475569'], borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: {position: 'bottom'} }, cutout: '70%' }
+      });
+    }
+
+    // ================= REPORTE DIARIO EXCEL (MULTI-HOJA) =================
+    function hoja(headers, rows) { return XLSX.utils.aoa_to_sheet([headers, ...rows]); }
+
+    function descargarReporteDiarioExcel() {
+      const dia = document.getElementById('fechaReporteDiario').value;
+      if(!dia) { alert('Selecciona una fecha para generar el reporte.'); return; }
+      if(typeof XLSX === 'undefined') { alert('No se pudo cargar la librería de Excel. Verifica tu conexión a internet e intenta de nuevo.'); return; }
+
+      const wb = XLSX.utils.book_new();
+
+      // --- RESUMEN ---
+      let kgTotal = 0, mermaTotal = 0, estibasTotal = 0, despachosTotal = 0, mpTotal = 0;
+      registrosProduccion.filter(r => r.fecha === dia).forEach(r => { kgTotal += parseFloat(r.cantidad)||0; mermaTotal += parseFloat(r.merma)||0; });
+      registrosCorte.filter(c => c.fecha === dia).forEach(c => mermaTotal += parseFloat(c.mermaCorte)||0);
+      registrosEnsamble.filter(e => e.fecha === dia).forEach(e => estibasTotal += parseFloat(e.cantRealizada)||0);
+      registrosDespachosPT.filter(d => d.fecha === dia).forEach(d => despachosTotal += parseFloat(d.cantEnviada)||0);
+      registrosMP.filter(m => m.fecha === dia).forEach(m => mpTotal += parseFloat(m.cantidad)||0);
+      XLSX.utils.book_append_sheet(wb, hoja(
+        ['Reporte Diario - Green Plastic Colombia', ''],
+        [['Fecha', dia], ['Kg Producidos (Total)', kgTotal.toFixed(1)], ['Merma Total (Kg)', mermaTotal.toFixed(1)], ['Estibas Armadas', estibasTotal], ['Unidades Despachadas', despachosTotal], ['Materia Prima Ingresada (Kg)', mpTotal.toFixed(1)], ['Generado', new Date().toLocaleString('es-CO')]]
+      ), 'Resumen');
+
+      // --- UNA HOJA POR MÁQUINA ---
+      Object.values(MAQUINAS_MAP).forEach(mq => {
+        const regs = registrosProduccion.filter(r => r.fecha === dia && r.maquina === mq.nombre).sort((a,b)=>(a.timestamp?.seconds||0)-(b.timestamp?.seconds||0));
+        const filas = regs.map(r => [r.jornada||'', r.operario||'', r.receta || r.referencia || '', parseFloat(r.cantidad)||0, parseFloat(r.unidades)||0, parseFloat(r.merma)||0]);
+        XLSX.utils.book_append_sheet(wb, hoja(['Jornada','Operario','Receta / Referencia','Cantidad (Kg)','Unidades','Merma (Kg)'], filas), mq.nombre.substring(0,31));
+      });
+
+      // --- ENTRADAS MATERIA PRIMA ---
+      const filasMP = registrosMP.filter(m => m.fecha === dia).map(m => [m.material||'', parseFloat(m.cantidad)||0, m.responsable||'']);
+      XLSX.utils.book_append_sheet(wb, hoja(['Material','Kilos','Responsable'], filasMP), 'Entradas MP');
+
+      // --- MOVIMIENTOS DE PERFILES (ENTRADAS / SALIDAS) ---
+      const filasMov = registrosMovimientos.filter(m => m.fecha === dia && !String(m.referencia||'').toUpperCase().includes('MATERIA PRIMA')).map(m => [m.folio||'', m.tipo||'', m.motivo||'', m.referencia||'', parseFloat(m.cantidad)||0, m.responsable||'']);
+      XLSX.utils.book_append_sheet(wb, hoja(['Folio','Tipo','Motivo','Perfil','Cantidad','Responsable'], filasMov), 'Movimientos Perfiles');
+
+      // --- ENSAMBLE ---
+      const filasEns = registrosEnsamble.filter(e => e.fecha === dia).map(e => [e.ordenTrabajo||'', e.productoTerminado||'', e.operario||'', parseFloat(e.cantRealizada)||0]);
+      XLSX.utils.book_append_sheet(wb, hoja(['OP','Producto Terminado','Operarios','Unidades Armadas'], filasEns), 'Ensamble');
+
+      // --- CORTE ---
+      const filasCorte = registrosCorte.filter(c => c.fecha === dia).map(c => [c.operario||'', c.perfilOrigen||'', c.cantOrigen||0, c.perfilDestino||'', c.cantDestino||0, parseFloat(c.mermaCorte)||0]);
+      XLSX.utils.book_append_sheet(wb, hoja(['Operario','Perfil Entrada','Cant. Entrada','Perfil Salida','Cant. Salida','Merma (Kg)'], filasCorte), 'Corte');
+
+      // --- DESPACHOS ---
+      const filasDesp = registrosDespachosPT.filter(d => d.fecha === dia).map(d => [d.ordenTrabajo||'', d.productoTerminado||'', d.cliente||'', d.transportador||'', d.placa||'', parseFloat(d.cantEnviada)||0, d.responsable||'']);
+      XLSX.utils.book_append_sheet(wb, hoja(['OP','Producto Terminado','Cliente','Transportador','Placa','Cantidad Enviada','Responsable'], filasDesp), 'Despachos');
+
+      // --- STOCK PRODUCTO TERMINADO (ACUMULADO A ESA FECHA) ---
+      const mPT = {};
+      registrosEnsamble.filter(e => e.fecha <= dia).forEach(e => { const k = `${e.ordenTrabajo}___${e.productoTerminado}`; if(!mPT[k]) mPT[k] = { op:e.ordenTrabajo, pt:e.productoTerminado, f:0, d:0 }; mPT[k].f += parseFloat(e.cantRealizada)||0; });
+      registrosDespachosPT.filter(d => d.fecha <= dia).forEach(d => { const k = `${d.ordenTrabajo}___${d.productoTerminado}`; if(mPT[k]) mPT[k].d += parseFloat(d.cantEnviada)||0; });
+      const filasStockPT = Object.values(mPT).map(d => [d.op, d.pt, d.f, d.d, d.f - d.d]);
+      XLSX.utils.book_append_sheet(wb, hoja(['OP','Producto Terminado','Fabricadas (Acum.)','Despachadas (Acum.)','Stock a la Fecha'], filasStockPT), 'Stock Prod. Terminado');
+
+      // --- STOCK PERFILES (ACUMULADO A ESA FECHA) ---
+      const mPer = {};
+      DB_PERFILES.forEach(p => mPer[String(p).trim().toUpperCase()] = { nom:p, e:0, s:0 });
+      registrosMovimientos.filter(m => m.fecha <= dia && !String(m.referencia||'').toUpperCase().includes('MATERIA PRIMA')).forEach(m => {
+        const k = String(m.referencia||'').trim().toUpperCase();
+        if(k) { if(!mPer[k]) mPer[k] = { nom:m.referencia, e:0, s:0 }; if(m.tipo==='ENTRADA') mPer[k].e += parseFloat(m.cantidad)||0; else mPer[k].s += parseFloat(m.cantidad)||0; }
+      });
+      registrosProduccion.filter(p => p.fecha <= dia).forEach(p => { if(p.referencia && p.unidades > 0) { const pr = String(p.referencia).toUpperCase(); if(mPer[pr]) mPer[pr].e += parseFloat(p.unidades)||0; } });
+      const filasStockPer = Object.values(mPer).filter(d => d.e > 0 || d.s > 0).map(d => [d.nom, d.e, d.s, d.e - d.s]);
+      XLSX.utils.book_append_sheet(wb, hoja(['Perfil','Entradas (Acum.)','Salidas (Acum.)','Stock a la Fecha'], filasStockPer), 'Stock Perfiles');
+
+      // --- DESEMPEÑO DE TRABAJADORES DEL DÍA ---
+      const stats = {};
+      const ensure = (n) => { if(!stats[n]) stats[n] = { kg:0, estibas:0 }; return stats[n]; };
+      registrosProduccion.filter(r => r.fecha === dia && !String(r.operario||'').includes('DAÑADA')).forEach(r => {
+        const ops = String(r.operario||'').split(' / ').map(o=>o.trim()).filter(Boolean); if(ops.length===0) return;
+        const kgc = (parseFloat(r.cantidad)||0)/ops.length; ops.forEach(o => ensure(o).kg += kgc);
+      });
+      registrosEnsamble.filter(e => e.fecha === dia).forEach(e => {
+        const ops = String(e.operario||'').split(' / ').map(o=>o.trim()).filter(Boolean); if(ops.length===0) return;
+        const ec = (parseFloat(e.cantRealizada)||0)/ops.length; ops.forEach(o => ensure(o).estibas += ec);
+      });
+      const filasDesemp = Object.entries(stats).sort((a,b)=>b[1].kg-a[1].kg).map(([n,s]) => [n, s.kg.toFixed(1), s.estibas.toFixed(0)]);
+      XLSX.utils.book_append_sheet(wb, hoja(['Trabajador','Kg Producidos','Estibas Armadas'], filasDesemp), 'Desempeño');
+
+      // --- MANTENIMIENTOS DEL DÍA ---
+      const filasMant = registrosMantenimientos.filter(m => m.fecha === dia).map(m => [m.maquina||'', m.componente||'', m.tipo||'', m.detalle||'', m.responsable||'']);
+      XLSX.utils.book_append_sheet(wb, hoja(['Máquina','Componente','Acción','Detalle','Responsable'], filasMant), 'Mantenimientos');
+
+      XLSX.writeFile(wb, `Reporte_Diario_GreenPlastic_${dia}.xlsx`);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const r = obtenerRangoActivo();
+      if(document.getElementById('filtroDesde')) document.getElementById('filtroDesde').value = r.desde;
+      if(document.getElementById('filtroHasta')) document.getElementById('filtroHasta').value = r.hasta;
+      if(document.getElementById('fechaReporteDiario')) document.getElementById('fechaReporteDiario').value = new Date().toISOString().split('T')[0];
+    });
+
+  </script>
+</body>
+</html>
