@@ -35,6 +35,7 @@
     .sub-tabs{display:flex;gap:6px;margin-bottom:15px;background:#0f172a;padding:6px;border-radius:6px;border:1px solid var(--border-color);flex-wrap:wrap}
     .sub-tab-btn{background:#1e293b;border:1px solid var(--border-color);color:var(--text-muted);padding:6px 12px;border-radius:4px;font-size:.8rem;font-weight:600;cursor:pointer}
     .sub-tab-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+    .ficha-subtab-btn.active{background:var(--primary)!important;color:#fff}
     .tab-content{display:none}
     .tab-content.active{display:block; animation: fadeIn 0.3s;}
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -167,7 +168,8 @@
       </div>
       <nav class="sidebar-nav">
         <button class="sidebar-item-btn" onclick="switchMainTab(this, 'reporte_diario_modulo')" style="background: rgba(245,158,11,.15); border: 1px solid #f59e0b; border-radius: 6px; margin: 0 10px 6px 10px; font-weight: bold; color: #f59e0b;">📋 Reporte Diario</button>
-        <button class="sidebar-item-btn" onclick="switchMainTab(this, 'sumatoria_kilos_modulo')" style="background: rgba(16,185,129,.15); border: 1px solid #10b981; border-radius: 6px; margin: 0 10px 12px 10px; font-weight: bold; color: #10b981;">📊 Sumatoria Mensual de Kilos</button>
+        <button class="sidebar-item-btn" onclick="switchMainTab(this, 'sumatoria_kilos_modulo')" style="background: rgba(16,185,129,.15); border: 1px solid #10b981; border-radius: 6px; margin: 0 10px 6px 10px; font-weight: bold; color: #10b981;">📊 Sumatoria Mensual de Kilos</button>
+        <button class="sidebar-item-btn" onclick="switchMainTab(this, 'consumo_perfiles_op_modulo')" style="background: rgba(56,189,248,.15); border: 1px solid #38bdf8; border-radius: 6px; margin: 0 10px 12px 10px; font-weight: bold; color: #38bdf8;">📐 Perfiles Gastados por OP (Mes)</button>
         <div class="sidebar-group active">
           <button class="sidebar-btn" onclick="toggleSidebarGroup(this)"><span>🏭 Producción</span></button>
           <div class="sidebar-menu-content">
@@ -377,6 +379,25 @@
         </div>
         <div class="card">
           <div id="contenedorSumatoriaKilos" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:14px;"></div>
+        </div>
+      </div>
+
+      <div id="consumo_perfiles_op_modulo" class="tab-content">
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h2 style="color: #38bdf8; margin-bottom:4px;">📐 Perfiles Gastados por OP (Mes)</h2>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">Una fila por cada Orden de Producción y una columna por cada perfil, con el subtotal de cada perfil y el total general al final del mes — igual que tu control en Excel.</p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap;" class="no-print">
+              <div class="form-group" style="margin-bottom:0;"><label>Mes a consultar</label><input type="month" id="consumoPerfilesOPMes" onchange="renderConsumoPerfilesOPMes()"></div>
+              <button class="btn" style="width:auto; background:#10b981;" onclick="descargarConsumoPerfilesOPExcel()">📊 Descargar Excel</button>
+              <button class="btn btn-success" style="width:auto;" onclick="imprimirConsumoPerfilesOP()">🖨️ Imprimir</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div id="contenedorConsumoPerfilesOP" style="overflow-x:auto;"></div>
         </div>
       </div>
 
@@ -2525,8 +2546,41 @@ function switchMachineTab(btnEl, key) {
         if(row.classList.contains('ficha-ref-input')) componentes[comp].referencia = row.value;
       });
       const obs = card.querySelector('.ficha-obs-input')?.value || '';
-      db.collection('fichas_maquinas').doc(maquina).set({ componentes, observacionGeneral: obs, actualizado: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
+      const panel = [];
+      card.querySelectorAll('.panel-disp-row').forEach(row => {
+        const dispositivo = row.querySelector('.panel-disp-input')?.value.trim() || '';
+        const amperaje = row.querySelector('.panel-amp-input')?.value.trim() || '';
+        const marca = row.querySelector('.panel-marca-input')?.value.trim() || '';
+        const modelo = row.querySelector('.panel-modelo-input')?.value.trim() || '';
+        const referencia = row.querySelector('.panel-ref-input')?.value.trim() || '';
+        if(dispositivo || amperaje || marca || modelo || referencia) panel.push({ dispositivo, amperaje, marca, modelo, referencia });
+      });
+      db.collection('fichas_maquinas').doc(maquina).set({ componentes, observacionGeneral: obs, panel, actualizado: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true })
         .then(() => alert(`✅ Ficha de ${maquina} guardada.`)).catch(err => alert('Error: ' + err.message));
+    }
+
+    function filaPanelDispositivoHTML(item) {
+      item = item || {};
+      return `<tr class="panel-disp-row">
+        <td><input type="text" class="panel-disp-input" value="${(item.dispositivo||'').replace(/"/g,'&quot;')}" placeholder="Ej: Breaker, Contactor..." style="height:26px; padding:0 4px; font-size:.75rem; width:100%;"></td>
+        <td><input type="text" class="panel-amp-input" value="${(item.amperaje||'').replace(/"/g,'&quot;')}" placeholder="Ej: 200A" style="height:26px; padding:0 4px; font-size:.75rem; width:90px;"></td>
+        <td><input type="text" class="panel-marca-input" value="${(item.marca||'').replace(/"/g,'&quot;')}" placeholder="Marca" style="height:26px; padding:0 4px; font-size:.75rem; width:100%;"></td>
+        <td><input type="text" class="panel-modelo-input" value="${(item.modelo||'').replace(/"/g,'&quot;')}" placeholder="Modelo" style="height:26px; padding:0 4px; font-size:.75rem; width:100%;"></td>
+        <td><input type="text" class="panel-ref-input" value="${(item.referencia||'').replace(/"/g,'&quot;')}" placeholder="Referencia" style="height:26px; padding:0 4px; font-size:.75rem; width:100%;"></td>
+        <td><button type="button" class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">🗑️</button></td>
+      </tr>`;
+    }
+
+    function agregarFilaPanel(btn) {
+      const tbody = btn.closest('.maquina-ficha-card')?.querySelector('.panel-tabla-body'); if(!tbody) return;
+      tbody.insertAdjacentHTML('beforeend', filaPanelDispositivoHTML({}));
+    }
+
+    function toggleFichaSubTab(btn, tab) {
+      const card = btn.closest('.maquina-ficha-card'); if(!card) return;
+      card.querySelectorAll('.ficha-subtab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      card.querySelectorAll('.ficha-subtab-content').forEach(c => c.style.display = (c.dataset.tab === tab ? 'block' : 'none'));
     }
 
     function renderVisorMaquinas() {
@@ -2550,16 +2604,27 @@ function switchMachineTab(btnEl, key) {
             const color = dias > 90 ? '#ef4444' : (dias > 30 ? '#f59e0b' : '#10b981');
             ultimoTxt = `<small style="color:${color};">${ultimo.fecha} (${dias}d)</small>`;
           }
-          const fc = ficha.componentes?.[c] || { estado: 'OK', referencia: '' };
+  const fc = ficha.componentes?.[c] || { estado: 'OK', referencia: '' };
           const opts = FICHA_ESTADOS.map(es => `<option value="${es}" ${fc.estado === es ? 'selected' : ''}>${es}</option>`).join('');
           return `<tr><td style="white-space:nowrap;"><small>${c}</small></td><td><select class="ficha-estado-input" data-comp="${c}" style="height:26px; padding:0 4px; font-size:.75rem; width:100px; min-width:100px;">${opts}</select></td><td><input type="text" class="ficha-ref-input" data-comp="${c}" value="${fc.referencia || ''}" placeholder="Modelo/Ref." style="height:26px; padding:0 4px; font-size:.75rem; width:100%;"></td><td style="text-align:right;">${ultimoTxt}</td></tr>`;
         }).join('');
+        const filasPanel = (ficha.panel && ficha.panel.length > 0 ? ficha.panel : [{}]).map(item => filaPanelDispositivoHTML(item)).join('');
         return `<div class="card maquina-ficha-card" data-maquina="${m}" style="padding:12px; margin:0;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
             <h4 style="color:#f59e0b; margin:0;">⚙️ ${m}</h4>
             <button type="button" class="toggle-status-btn ${operativa ? 'activa' : 'danada'}" onclick="toggleEstadoMaquinaVisor('${m}')">${operativa ? '🟢 Funcionando' : '🔴 Dañada'}</button>
           </div>
-          <table style="width:100%; font-size:.75rem;"><thead><tr><th>Componente</th><th>Estado</th><th>Referencia / Modelo</th><th style="text-align:right;">Últ. Mant.</th></tr></thead><tbody>${filas}</tbody></table>
+          <div style="display:flex; gap:4px; margin-bottom:8px;">
+            <button type="button" class="btn btn-sm ficha-subtab-btn active" style="flex:1; background:#334155;" onclick="toggleFichaSubTab(this,'tecnica')">🔧 Ficha Técnica</button>
+            <button type="button" class="btn btn-sm ficha-subtab-btn" style="flex:1; background:#334155;" onclick="toggleFichaSubTab(this,'panel')">⚡ Panel Eléctrico</button>
+          </div>
+          <div class="ficha-subtab-content" data-tab="tecnica">
+            <table style="width:100%; font-size:.75rem;"><thead><tr><th>Componente</th><th>Estado</th><th>Referencia / Modelo</th><th style="text-align:right;">Últ. Mant.</th></tr></thead><tbody>${filas}</tbody></table>
+          </div>
+          <div class="ficha-subtab-content" data-tab="panel" style="display:none;">
+            <table style="width:100%; font-size:.75rem;"><thead><tr><th>Dispositivo</th><th>Amperaje</th><th>Marca</th><th>Modelo</th><th>Referencia</th><th></th></tr></thead><tbody class="panel-tabla-body">${filasPanel}</tbody></table>
+            <button type="button" class="btn btn-sm" style="margin-top:6px; background:#6366f1;" onclick="agregarFilaPanel(this)">➕ Agregar Dispositivo</button>
+          </div>
           <div class="form-group" style="margin-top:8px; margin-bottom:6px;"><label style="font-size:.75rem;">Observación General</label><textarea class="ficha-obs-input" rows="2" style="font-size:.8rem;" placeholder="Ej: Se realizó cambio de correas el 07/08...">${ficha.observacionGeneral || ''}</textarea></div>
           <div style="display:flex; gap:6px;">
             <button type="button" class="btn btn-success btn-sm" style="flex:1;" onclick="guardarFichaMaquina('${m}')">💾 Guardar Ficha</button>
@@ -2576,10 +2641,14 @@ function switchMachineTab(btnEl, key) {
       const historial = registrosMantenimientos.filter(r => r.maquina === maquina).sort((a,b) => String(b.fecha||'').localeCompare(String(a.fecha||''))).slice(0, 8);
       const filasComp = comps.map(c => { const fc = ficha.componentes?.[c] || { estado: 'OK', referencia: '' }; return `<tr><td>${c}</td><td>${fc.estado || 'OK'}</td><td>${fc.referencia || '-'}</td></tr>`; }).join('');
       const filasHist = historial.length ? historial.map(r => `<tr><td>${r.fecha||''}</td><td>${r.componente||''}</td><td>${r.tipo||''}</td><td>${r.detalle||''}</td><td>${r.responsable||''}</td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center;color:#94a3b8;">Sin registros de mantenimiento.</td></tr>';
+      const panelItems = (ficha.panel || []).filter(p => p.dispositivo || p.amperaje || p.marca || p.modelo || p.referencia);
+      const filasPanel = panelItems.length ? panelItems.map(p => `<tr><td>${p.dispositivo||''}</td><td>${p.amperaje||''}</td><td>${p.marca||''}</td><td>${p.modelo||''}</td><td>${p.referencia||''}</td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center;color:#94a3b8;">Sin dispositivos registrados.</td></tr>';
       return `
         <div class="maquina-bloque">
           <h2>${maquina} &nbsp; <span class="estado-badge ${operativa ? 'op' : 'da'}">${operativa ? '🟢 FUNCIONANDO' : '🔴 DAÑADA'}</span></h2>
           <table><thead><tr><th>Componente</th><th>Estado</th><th>Referencia / Modelo</th></tr></thead><tbody>${filasComp}</tbody></table>
+          <p class="obs-label">Panel Eléctrico</p>
+          <table><thead><tr><th>Dispositivo</th><th>Amperaje</th><th>Marca</th><th>Modelo</th><th>Referencia</th></tr></thead><tbody>${filasPanel}</tbody></table>
           <p class="obs-label">Observación General</p>
           <div class="obs">${ficha.observacionGeneral ? String(ficha.observacionGeneral).replace(/</g,'&lt;') : 'Sin observaciones registradas.'}</div>
           <p class="obs-label">Últimos Mantenimientos</p>
@@ -2625,6 +2694,8 @@ function switchMachineTab(btnEl, key) {
       const historial = registrosMantenimientos.filter(r => r.maquina === maquina).sort((a,b) => String(b.fecha||'').localeCompare(String(a.fecha||'')));
       const filasComp = comps.map(c => { const fc = ficha.componentes?.[c] || { estado: 'OK', referencia: '' }; return `<tr><td>${c}</td><td>${fc.estado || 'OK'}</td><td>${fc.referencia || '-'}</td></tr>`; }).join('');
       const filasHist = historial.length ? historial.map(r => `<tr><td>${r.fecha||''}</td><td>${r.componente||''}</td><td>${r.tipo||''}</td><td>${r.detalle||''}</td><td>${r.responsable||''}</td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center;">Sin registros de mantenimiento.</td></tr>';
+      const panelItemsV = (ficha.panel || []).filter(p => p.dispositivo || p.amperaje || p.marca || p.modelo || p.referencia);
+      const filasPanelV = panelItemsV.length ? panelItemsV.map(p => `<tr><td>${p.dispositivo||''}</td><td>${p.amperaje||''}</td><td>${p.marca||''}</td><td>${p.modelo||''}</td><td>${p.referencia||''}</td></tr>`).join('') : '<tr><td colspan="5" style="text-align:center;">Sin dispositivos registrados.</td></tr>';
       const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Ficha Técnica - ${maquina}</title>
         <style>
           body{font-family:Arial,Helvetica,sans-serif;color:#1e293b;padding:30px;max-width:900px;margin:0 auto;}
@@ -2644,6 +2715,8 @@ function switchMachineTab(btnEl, key) {
         <h2 style="margin-top:0;">${maquina} &nbsp; <span class="estado-badge ${operativa ? 'op' : 'da'}">${operativa ? '🟢 FUNCIONANDO' : '🔴 DAÑADA'}</span></h2>
         <h2>Componentes</h2>
         <table><thead><tr><th>Componente</th><th>Estado</th><th>Referencia / Modelo</th></tr></thead><tbody>${filasComp}</tbody></table>
+        <h2>Panel Eléctrico</h2>
+        <table><thead><tr><th>Dispositivo</th><th>Amperaje</th><th>Marca</th><th>Modelo</th><th>Referencia</th></tr></thead><tbody>${filasPanelV}</tbody></table>
         <h2>Observación General</h2>
         <div class="obs">${ficha.observacionGeneral ? ficha.observacionGeneral.replace(/</g,'&lt;') : 'Sin observaciones registradas.'}</div>
         <h2>Historial de Mantenimientos</h2>
@@ -3984,6 +4057,93 @@ function switchMachineTab(btnEl, key) {
       w.document.write(html); w.document.close();
     }
 
+    function calcularMatrizConsumoPerfilesOP(mes) {
+      const registros = registrosConsumosOP.filter(c => (c.fecha||'').startsWith(mes));
+      const ordenesMap = {};
+      const perfilesSet = new Set();
+      registros.forEach(c => {
+        const op = c.ordenTrabajo || 'S/O';
+        if (!ordenesMap[op]) ordenesMap[op] = { orden: op, fecha: c.fecha, perfiles: {}, total: 0 };
+        if (c.fecha && (!ordenesMap[op].fecha || c.fecha < ordenesMap[op].fecha)) ordenesMap[op].fecha = c.fecha;
+        (c.detalles || []).forEach(d => {
+          const perfil = d.perfil || 'Sin Perfil'; const cant = parseFloat(d.cantidad) || 0;
+          perfilesSet.add(perfil);
+          ordenesMap[op].perfiles[perfil] = (ordenesMap[op].perfiles[perfil] || 0) + cant;
+          ordenesMap[op].total += cant;
+        });
+      });
+      const perfilesOrden = DB_PERFILES.filter(p => perfilesSet.has(p));
+      perfilesSet.forEach(p => { if (!perfilesOrden.includes(p)) perfilesOrden.push(p); });
+      const ordenes = Object.values(ordenesMap).sort((a,b) => String(a.orden).localeCompare(String(b.orden)));
+      const subtotales = {}; perfilesOrden.forEach(p => subtotales[p] = 0);
+      let totalGeneral = 0;
+      ordenes.forEach(o => { perfilesOrden.forEach(p => subtotales[p] += (o.perfiles[p] || 0)); totalGeneral += o.total; });
+      return { ordenes, perfilesOrden, subtotales, totalGeneral };
+    }
+
+    function renderConsumoPerfilesOPMes() {
+      const mes = document.getElementById('consumoPerfilesOPMes')?.value;
+      const cont = document.getElementById('contenedorConsumoPerfilesOP'); if (!cont || !mes) return;
+      const { ordenes, perfilesOrden, subtotales, totalGeneral } = calcularMatrizConsumoPerfilesOP(mes);
+      if (ordenes.length === 0) { cont.innerHTML = '<p style="text-align:center; color:var(--text-muted); padding:20px;">No hay consumo de perfiles registrado para este mes.</p>'; window.__consumoPerfilesOPMes = mes; return; }
+      const theadPerfiles = perfilesOrden.map(p => `<th style="text-align:right;">${p}</th>`).join('');
+      const filas = ordenes.map(o => {
+        const celdas = perfilesOrden.map(p => `<td style="text-align:right; ${o.perfiles[p] ? 'background:rgba(56,189,248,.10);' : ''}">${o.perfiles[p] ? o.perfiles[p].toFixed(0) : ''}</td>`).join('');
+        return `<tr><td><strong style="color:#f59e0b;">${o.orden}</strong></td><td><small>${o.fecha||''}</small></td>${celdas}<td style="text-align:right; font-weight:bold; color:#10b981;">${o.total.toFixed(0)}</td></tr>`;
+      }).join('');
+      const celdasSubtotal = perfilesOrden.map(p => `<td style="text-align:right;">${subtotales[p].toFixed(0)}</td>`).join('');
+      cont.innerHTML = `<table style="width:100%; font-size:.78rem; min-width:${600 + perfilesOrden.length*90}px;">
+        <thead><tr style="position:sticky; top:0; background:#1e293b;"><th>Orden (OP)</th><th>Fecha</th>${theadPerfiles}<th>Total OP</th></tr></thead>
+        <tbody>${filas}</tbody>
+        <tfoot><tr style="font-weight:bold; background:rgba(56,189,248,.15);"><td colspan="2">SUBTOTAL DEL MES</td>${celdasSubtotal}<td style="text-align:right; color:#10b981;">${totalGeneral.toFixed(0)}</td></tr></tfoot>
+      </table>`;
+      window.__consumoPerfilesOPMes = mes;
+    }
+
+    function imprimirConsumoPerfilesOP() {
+      const mes = window.__consumoPerfilesOPMes; if (!mes) { alert('Selecciona un mes primero.'); return; }
+      const { ordenes, perfilesOrden, subtotales, totalGeneral } = calcularMatrizConsumoPerfilesOP(mes);
+      if (ordenes.length === 0) { alert('No hay datos para imprimir en ese mes.'); return; }
+      const theadPerfiles = perfilesOrden.map(p => `<th>${p}</th>`).join('');
+      const filas = ordenes.map(o => `<tr><td>${o.orden}</td><td>${o.fecha||''}</td>${perfilesOrden.map(p => `<td style="text-align:right;">${o.perfiles[p] ? o.perfiles[p].toFixed(0) : ''}</td>`).join('')}<td style="text-align:right; font-weight:bold;">${o.total.toFixed(0)}</td></tr>`).join('');
+      const filaSubtotal = `<tr style="font-weight:bold;"><td colspan="2">SUBTOTAL DEL MES</td>${perfilesOrden.map(p => `<td style="text-align:right;">${subtotales[p].toFixed(0)}</td>`).join('')}<td style="text-align:right;">${totalGeneral.toFixed(0)}</td></tr>`;
+      const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Perfiles Gastados por OP ${mes}</title>
+        <style>
+          body{font-family:Arial,Helvetica,sans-serif;color:#1e293b;background:#fff;padding:20px;}
+          h1{margin-bottom:0;} .sub{color:#64748b;margin-top:2px;margin-bottom:16px;}
+          table{width:100%;border-collapse:collapse;font-size:.68rem;}
+          th,td{border:1px solid #cbd5e1;padding:3px 5px;text-align:left;color:#1e293b;}
+          th{background:#1e293b;color:#fff;}
+          .btnPrint{background:#0284c7;color:#fff;border:none;padding:10px 18px;border-radius:6px;cursor:pointer;margin-bottom:16px;}
+          td{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
+          @media print{.btnPrint{display:none;}}
+        </style></head><body>
+        <button class="btnPrint" onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>
+        <h1>Perfiles Gastados por OP</h1>
+        <p class="sub">Green Plastic Colombia · ${mes}</p>
+        <table><thead><tr><th>Orden (OP)</th><th>Fecha</th>${theadPerfiles}<th>Total OP</th></tr></thead><tbody>${filas}${filaSubtotal}</tbody></table>
+        </body></html>`;
+      const w = window.open('', '_blank');
+      if (!w) { alert('El navegador bloqueó la ventana emergente. Habilita los pop-ups para ver el documento.'); return; }
+      w.document.write(html); w.document.close();
+    }
+
+    function descargarConsumoPerfilesOPExcel() {
+      const mes = window.__consumoPerfilesOPMes; if (!mes) { alert('Selecciona un mes primero.'); return; }
+      if (typeof XLSX === 'undefined') { alert('No se pudo cargar la librería de Excel.'); return; }
+      const { ordenes, perfilesOrden, subtotales, totalGeneral } = calcularMatrizConsumoPerfilesOP(mes);
+      if (ordenes.length === 0) { alert('No hay datos para exportar en ese mes.'); return; }
+      const filasMatriz = [];
+      filasMatriz.push(['Orden (OP)', 'Fecha', ...perfilesOrden, 'Total OP']);
+      ordenes.forEach(o => filasMatriz.push([o.orden, o.fecha || '', ...perfilesOrden.map(p => o.perfiles[p] || 0), o.total]));
+      filasMatriz.push(['SUBTOTAL DEL MES', '', ...perfilesOrden.map(p => subtotales[p]), totalGeneral]);
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(filasMatriz);
+      ws['!cols'] = [{ wch: 14 }, { wch: 12 }, ...perfilesOrden.map(() => ({ wch: 14 })), { wch: 12 }];
+      XLSX.utils.book_append_sheet(wb, ws, mes);
+      XLSX.writeFile(wb, `Perfiles_Gastados_OP_${mes}.xlsx`);
+    }
+
     function calcularResumenGeneralMes(mes) {
       const dias = obtenerDiasDelMes(mes);
       let kilosExtruidos = 0, mermaTotalTorta = 0, totalAglutinado = 0;
@@ -4105,6 +4265,7 @@ function switchMachineTab(btnEl, key) {
       try { renderProduccionDiaria(); } catch(e) {}
       try { renderReporteDiario(); } catch(e) {}
       try { renderSumatoriaKilosMensual(); } catch(e) {}
+      try { renderConsumoPerfilesOPMes(); } catch(e) {}
       try { renderCorteMesModulo(); } catch(e) {}
       try { renderTrazabilidadPorOrden(); } catch(e) {}
       try { renderModuloMovimientos(); } catch(e) {}
@@ -4138,6 +4299,7 @@ function switchMachineTab(btnEl, key) {
       cargarSelectMaquinasMantenimiento();
       if(document.getElementById('corteMesModuloSelector')) document.getElementById('corteMesModuloSelector').value = new Date().toISOString().substring(0,7);
       if(document.getElementById('sumatoriaKilosMes')) document.getElementById('sumatoriaKilosMes').value = new Date().toISOString().substring(0,7);
+      if(document.getElementById('consumoPerfilesOPMes')) document.getElementById('consumoPerfilesOPMes').value = new Date().toISOString().substring(0,7);
       iniciarRecetaOPVacia();
     });
   </script>
