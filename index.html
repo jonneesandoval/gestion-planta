@@ -39,12 +39,14 @@
     .tab-content{display:none}
     .tab-content.active{display:block; animation: fadeIn 0.3s;}
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .grid-2{display:grid;grid-template-columns:340px 1fr;gap:15px}
+    .grid-2{display:grid;grid-template-columns:400px 1fr;gap:15px}
     .card{background:var(--card-bg);padding:15px;border-radius:8px;border:1px solid var(--border-color);box-shadow:0 2px 4px -1px rgba(0,0,0,.2);margin-bottom:15px}
     .form-group{margin-bottom:10px}
     label{display:block;margin-bottom:4px;font-size:.8rem;font-weight:500;color:var(--text-muted)}
-    input,select,textarea{width:100%;padding:6px 10px;height:32px;background:#0f172a;border:1px solid var(--border-color);border-radius:4px;color:#fff;font-size:.85rem}
+    input,select,textarea{width:100%;padding:6px 10px;height:32px;background:#0f172a;border:1px solid var(--border-color);border-radius:4px;color:#fff;font-size:.85rem;text-overflow:ellipsis}
     textarea{height:auto}
+    select.select-listbox-largo{white-space:nowrap;overflow-x:auto}
+    select.select-listbox-largo option{white-space:nowrap;padding:4px 6px}
     input:focus,select:focus,textarea:focus{outline:0;border-color:var(--primary)}
     .search-box{margin-bottom:10px;border-color:#6366f1;background:#0f172a}
     select option { white-space: normal; word-wrap: break-word; padding: 4px; border-bottom: 1px solid #1e293b; }
@@ -185,6 +187,7 @@
             <button class="sidebar-item-btn" onclick="switchMainTab(this, 'ensamble_modulo')">9. Ensamble</button>
             <button class="sidebar-item-btn" onclick="switchMainTab(this, 'kardex_pt_modulo')">10. Kardex Producto Terminado</button>
             <button class="sidebar-item-btn" onclick="switchMainTab(this, 'logistica_pt_modulo')">11. Logística Despacho</button>
+            <button class="sidebar-item-btn" onclick="switchMainTab(this, 'tornilleria_modulo')">12. Tornillería (Catálogo y Stock)</button>
             <div style="padding:10px 15px 4px 35px; font-size:.68rem; color:var(--text-muted); border-top:1px solid var(--border-color); margin-top:6px;">Otros movimientos de perfiles</div>
             <button class="sidebar-item-btn" onclick="switchMainTab(this, 'entradas_modulo')">Entradas Perfiles (Bodega 5)</button>
             <button class="sidebar-item-btn" onclick="switchMainTab(this, 'salidas_modulo')">Salidas Perfiles (Bodega 6)</button>
@@ -219,6 +222,7 @@
             <button class="sidebar-item-btn" onclick="switchMainTab(this, 'config_personal_modulo')">a. Plantilla de Personal</button>
             <button class="sidebar-item-btn" onclick="switchMainTab(this, 'config_perfiles_modulo')">b1. Catálogo de Perfiles</button>
             <button class="sidebar-item-btn" onclick="switchMainTab(this, 'config_pt_modulo')">b2. Catálogo Producto Terminado</button>
+            <button class="sidebar-item-btn" style="color:#ef4444;" onclick="switchMainTab(this, 'config_pt_masivo_modulo')">b3. Carga Masiva Producto Terminado</button>
             <button class="sidebar-item-btn" onclick="switchMainTab(this, 'clientes_modulo')">c1. Directorio Clientes</button>
             <button class="sidebar-item-btn" onclick="switchMainTab(this, 'transportadores_modulo')">c2. Directorio Transportadores</button>
             <button class="sidebar-item-btn" onclick="switchMainTab(this, 'proveedores_modulo')">c3. Directorio Proveedores</button>
@@ -479,13 +483,19 @@
                 <label>🔍 Producto Terminado Elaborado:</label>
                 <input type="text" class="search-box" id="searchProductoTerminado" placeholder="Buscar estiba..." oninput="filtrarProductoTerminadoSelect()">
                 <div style="background: #0f172a; border: 1px solid var(--border-color); border-radius: 4px; padding: 2px;">
-                  <select id="ensProductoSelect" size="6" onchange="mostrarVistaPreviaPTEnsamble()" required style="height: auto; width: 100%; border: none; background: transparent; outline: none;"></select>
+                  <select id="ensProductoSelect" class="select-listbox-largo" size="6" onchange="mostrarVistaPreviaPTEnsamble()" required style="height: auto; width: 100%; border: none; background: transparent; outline: none;"></select>
                 </div>
                 <div id="previewPTCardEnsamble" class="preview-card-box" style="display: none;"><div id="lblPreviewPTTextEnsamble" style="font-weight: bold;">-</div></div>
               </div>
               <div style="display: flex; gap: 10px;">
                 <div class="form-group" style="flex: 1;"><label>Estibas (Unid)</label><input type="number" id="ensCantRealizada" min="1" step="1" required onchange="aplicarRecetaAEnsamble()"></div>
-                <div class="form-group" style="flex: 1;"><label>Tornillos Usados</label><input type="number" id="ensTornillos" min="0" step="1" required></div>
+                <div class="form-group" style="flex: 1;"><label>Total Tornillos Usados</label><input type="number" id="ensTornillos" min="0" step="1" readonly style="background:#1e293b; color:#f59e0b; font-weight:bold;"></div>
+              </div>
+              <div class="form-group">
+                <label style="color: #f59e0b;">🔩 Tornillos Usados en este Ensamble</label>
+                <p style="font-size:.7rem; color:var(--text-muted); margin:2px 0 6px 0;" id="lblRecetaTornillosAutoEnsamble">Selecciona una OT con receta de tornillos para que se sugieran solos, o agrégalos manualmente (pueden ser varias referencias, ej: 376 de 8x2 y 32 de 12x3).</p>
+                <div id="contenedorTornillosUsadosEnsamble"></div>
+                <button type="button" class="btn btn-sm" style="background:#f59e0b; color:#000; width:100%; margin-top:6px;" onclick="agregarFilaTornilloUsadoEnsamble()">+ Agregar Tornillo</button>
               </div>
               <div class="form-group">
                 <label style="color: #a855f7;">📦 Perfiles Usados en este Ensamble</label>
@@ -548,7 +558,7 @@
                 <label>Producto a Fabricar</label>
                 <input type="text" class="search-box" id="searchOPProducto" placeholder="Buscar producto..." oninput="filtrarOPProductoSelect()">
                 <div style="background: #0f172a; border: 1px solid var(--border-color); border-radius: 4px; padding: 2px;">
-                  <select id="opProductoSelect" size="6" required style="height: auto; width: 100%; border: none; background: transparent; outline: none;"></select>
+                  <select id="opProductoSelect" class="select-listbox-largo" size="6" required style="height: auto; width: 100%; border: none; background: transparent; outline: none;"></select>
                 </div>
               </div>
               <div class="form-group"><label style="color: #10b981;">Cantidad Solicitada (Meta)</label><input type="number" id="opCantSolicitada" min="1" step="1" oninput="calcularTotalesRecetaOP()"></div>
@@ -557,11 +567,10 @@
                 <p style="font-size:.7rem; color:var(--text-muted); margin:2px 0 6px 0;">Ej: Listón Superior = Perfil 70 x7, Listón Inferior = Perfil 82 x4. El "Total" se calcula solo multiplicando por la Meta de arriba.</p>
                 <div id="contenedorRecetaOP"></div>
                 <button type="button" class="btn btn-sm" style="background:#a855f7; width:100%; margin-top:6px;" onclick="agregarFilaRecetaOP()">+ Agregar Parte de la Estiba</button>
-                <div style="display:flex; gap:6px; align-items:center; margin-top:10px; background:#0f172a; padding:8px; border-radius:6px;">
-                  <label style="flex:1; margin:0; font-size:.8rem;">🔩 Tornillos por Estiba</label>
-                  <input type="number" id="opTornillosPorEstiba" min="0" step="1" placeholder="Ej: 60" style="width:75px; height:32px;" oninput="calcularTotalesRecetaOP()">
-                  <span id="lblTotalTornillosOP" style="width:80px; text-align:right; font-weight:bold; color:#f59e0b;">Total: 0</span>
-                </div>
+                <label style="color: #f59e0b; margin-top:12px; display:block;">🔩 Tornillos por Estiba (Despiece)</label>
+                <p style="font-size:.7rem; color:var(--text-muted); margin:2px 0 6px 0;">Ej: Tornillo Drywall 8x2 x376, Tornillo Drywall 12x3 x32. El "Total" se calcula multiplicando por la Meta de arriba.</p>
+                <div id="contenedorRecetaTornillosOP"></div>
+                <button type="button" class="btn btn-sm" style="background:#f59e0b; color:#000; width:100%; margin-top:6px;" onclick="agregarFilaRecetaTornilloOP()">+ Agregar Tornillo</button>
               </div>
               <div style="display:flex;gap:8px;"><button type="submit" id="btnSubmitOP" class="btn" style="background: #0284c7; flex:2;">➕ Registrar Orden</button><button type="button" class="btn" id="btnCancelarEdicionOP" style="flex:1; display:none; background:#64748b;" onclick="cancelarEdicionOP()">Cancelar</button></div>
             </form>
@@ -631,6 +640,45 @@
           <div class="card">
             <h3>Base de Datos de Estibas Despachadas</h3>
             <table><thead><tr><th>Folio/Fecha</th><th>OP / Referencia PT</th><th>Cant.</th><th>Cliente</th><th>Transportador / Datos</th><th>Acción</th></tr></thead><tbody id="tablaHistorialDespachosPTBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <div id="tornilleria_modulo" class="tab-content">
+        <div class="grid-2">
+          <div class="card form-panel">
+            <h3 style="color: #f59e0b;">🔩 Nueva Referencia</h3>
+            <p style="font-size:.75rem; color:var(--text-muted); margin-bottom:8px;">Ej: Tipo "Tornillo Drywall", Referencia "8x2".</p>
+            <form onsubmit="guardarNuevaReferenciaTornilleria(event)">
+              <div class="form-group"><label>Tipo</label><select id="nuevoTornilloTipo" required><option value="Tornillo Drywall">Tornillo Drywall</option><option value="Tornillo Hexagonal">Tornillo Hexagonal</option><option value="Tuerca">Tuerca</option><option value="Arandela">Arandela</option><option value="Otro">Otro</option></select></div>
+              <div class="form-group"><label>Referencia / Medida</label><input type="text" id="nuevoTornilloReferencia" placeholder="Ej: 8x2, 10x2, 5/8..." required></div>
+              <button type="submit" class="btn btn-warning btn-sm">Crear Referencia</button>
+            </form>
+          </div>
+          <div class="card">
+            <h3 style="color: #f59e0b;">✏️ Catálogo de Tornillería (Editar)</h3>
+            <input type="text" class="search-box" id="searchTornilleriaConfig" placeholder="🔍 Buscar referencia..." oninput="renderTablaTornilleriaConfig()">
+            <div style="max-height: 400px; overflow-y: auto;"><table><thead><tr><th>Tipo</th><th>Referencia</th><th>🗑️</th></tr></thead><tbody id="tablaTornilleriaConfigBody"></tbody></table></div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="card form-panel">
+            <h3 style="color: #38bdf8;">📦 Movimiento Manual de Stock</h3>
+            <p style="font-size:.75rem; color:var(--text-muted); margin-bottom:8px;">Para Tornillo Hexagonal, Tuercas y Arandelas. Los Tornillos Drywall se descuentan solos con cada Ensamble.</p>
+            <form onsubmit="guardarMovimientoTornilleria(event)">
+              <div class="form-group"><label>Fecha</label><input type="date" id="tornMovFecha" onchange="recordarFechaInput(this)" required></div>
+              <div class="form-group"><label>Tipo de Movimiento</label><select id="tornMovTipo" required><option value="ENTRADA">➕ Entrada (Compra / Ingreso)</option><option value="SALIDA">➖ Salida (Uso / Ajuste)</option></select></div>
+              <div class="form-group"><label>Referencia</label><select id="tornMovReferencia" required></select></div>
+              <div class="form-group"><label>Cantidad (Unid)</label><input type="number" min="1" step="1" id="tornMovCantidad" required></div>
+              <div class="form-group"><label>Motivo</label><input type="text" id="tornMovMotivo" placeholder="Ej: Compra, Reposición, Ajuste..."></div>
+              <div class="form-group"><label>Responsable</label><select id="tornMovResponsable" required></select></div>
+              <button type="submit" class="btn" style="background:#38bdf8;">💾 Guardar Movimiento</button>
+            </form>
+          </div>
+          <div class="card">
+            <h3 style="color: #10b981;">📊 Kardex de Tornillería</h3>
+            <input type="text" class="search-box" id="searchKardexTornilleria" placeholder="🔍 Buscar referencia..." oninput="renderKardexTornilleria()">
+            <div style="max-height: 400px; overflow-y: auto;"><table><thead><tr><th>Referencia</th><th style="color:#10b981;">➕ Entradas</th><th style="color:#ef4444;">➖ Salidas</th><th>📦 Stock</th></tr></thead><tbody id="tablaKardexTornilleriaBody"></tbody></table></div>
           </div>
         </div>
       </div>
@@ -797,6 +845,7 @@
           </form>
           <button class="btn btn-sm" style="background: #6366f1; width: 100%; margin-bottom: 10px;" onclick="restaurarListaOficial()">🔄 Cargar Lista Oficial Nube</button>
           <input type="text" class="search-box" id="searchTrabajadores" placeholder="🔍 Buscar trabajador..." oninput="renderTablaTrabajadoresPersonal()">
+          <p id="lblTrabajadoresDuplicados" style="font-size:.75rem; color:#ef4444; display:none; margin-top:8px;"></p>
           <div style="max-height: 550px; overflow-y: auto; margin-top:10px;">
             <table><thead><tr><th>#</th><th>Nombre</th><th>Rol / Cuenta</th><th></th></tr></thead><tbody id="tablaTrabajadoresBody"></tbody></table>
           </div>
@@ -812,11 +861,14 @@
               <div style="display: flex; gap: 8px; margin-bottom: 10px;"><input type="number" step="0.01" id="nuevoPerfilPesoO" placeholder="Peso In" required><input type="number" step="0.01" id="nuevoPerfilPesoD" placeholder="Peso Out"></div>
               <button type="submit" class="btn btn-success btn-sm">Crear Perfil</button>
             </form>
+            <button type="button" class="btn btn-sm" style="background: #6366f1; width: 100%; margin-top: 10px;" onclick="restaurarCatalogoPerfilesOficial()">🔄 Restaurar Catálogo Oficial (128 Ref)</button>
+            <p style="font-size:.7rem; color:var(--text-muted); margin-top:6px;">Solo agrega los perfiles del catálogo oficial que falten (por código). No duplica ni pisa los pesos de los que ya existen.</p>
           </div>
           <div class="card">
             <h3>⚖️ Pesos de Perfiles (Editar)</h3>
             <input type="text" class="search-box" id="searchPerfilConfig" placeholder="🔍 Buscar perfil..." oninput="renderTablaPerfilesConfig()">
-            <div style="max-height: 500px; overflow-y: auto;"><table><thead><tr><th>Perfil</th><th>P. In</th><th>P. Out</th><th>💾</th></tr></thead><tbody id="tablaPerfilesConfigBody"></tbody></table></div>
+            <p id="lblPerfilesDuplicados" style="font-size:.75rem; color:#ef4444; display:none; margin-bottom:8px;"></p>
+            <div style="max-height: 500px; overflow-y: auto;"><table><thead><tr><th>Perfil</th><th>P. In</th><th>P. Out</th><th>💾</th><th>🗑️</th></tr></thead><tbody id="tablaPerfilesConfigBody"></tbody></table></div>
           </div>
         </div>
       </div>
@@ -835,6 +887,31 @@
             <h3 style="color: #f59e0b;">✏️ Catálogo PT (Editar)</h3>
             <input type="text" class="search-box" id="searchPTConfig" placeholder="🔍 Buscar PT..." oninput="renderTablaPTConfig()">
             <div style="max-height: 500px; overflow-y: auto;"><table><tbody id="tablaPTConfigBody"></tbody></table></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="config_pt_masivo_modulo" class="tab-content">
+        <div class="card">
+          <h2 style="color:#ef4444; margin-bottom:4px;">🗑️📤 Carga Masiva de Producto Terminado</h2>
+          <p style="font-size:.8rem; color:var(--text-muted);">Para cuando el listado completo de Producto Terminado está mal y hay que reemplazarlo entero (156+ referencias) sin borrar y subir uno por uno. Pega el listado nuevo, uno por línea, y usa "Reemplazar Todo" para borrar el catálogo actual y subir el nuevo en un solo paso.</p>
+          <p style="font-size:.8rem; margin-top:8px;">📦 Catálogo actual: <strong id="lblConteoPTActual">0</strong> productos.</p>
+        </div>
+        <div class="grid-2">
+          <div class="card" style="border:1px solid #ef4444;">
+            <h3 style="color:#ef4444;">🗑️ Borrar Todo el Catálogo</h3>
+            <p style="font-size:.75rem; color:var(--text-muted);">Elimina TODOS los productos terminados del catálogo actual, sin subir nada nuevo. Úsalo solo si vas a empezar de cero.</p>
+            <button type="button" class="btn btn-danger" onclick="confirmarBorrarTodoCatalogoPT()">🗑️ Borrar Todo el Catálogo Actual</button>
+          </div>
+          <div class="card form-panel">
+            <h3 style="color:#f59e0b;">📤 Subir Listado Masivo</h3>
+            <p style="font-size:.75rem; color:var(--text-muted);">Un producto por línea. Puedes usar el formato completo "PRODUCTO TERMINADO 01 | EPTL 100*100*13 AL" o solo la descripción — se sube tal cual la escribas.</p>
+            <div class="form-group"><textarea id="textareaPTMasivo" rows="10" placeholder="PRODUCTO TERMINADO 01 | EPTL 100*100*13 AL&#10;PRODUCTO TERMINADO 02 | EPTL 100*100*13 AL&#10;..." oninput="actualizarConteoPTMasivo()"></textarea></div>
+            <p style="font-size:.75rem; color:var(--text-muted); margin-bottom:10px;">Líneas detectadas: <strong id="lblConteoPTMasivo">0</strong></p>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button type="button" class="btn btn-danger btn-sm" style="flex:1;" onclick="subirListadoMasivoPT(true)">🔄 Reemplazar Todo (Borra lo actual y sube esta lista)</button>
+              <button type="button" class="btn btn-success btn-sm" style="flex:1;" onclick="subirListadoMasivoPT(false)">➕ Solo Agregar (sin borrar lo existente)</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1308,6 +1385,7 @@
     let dbEstadoMaquinasNube = {}, listaTrabajadores = [], registrosProduccion = [], registrosMP = [];
     let registrosMovimientos = [], registrosCorte = [], registrosEnsamble = [], registrosDespachosPT = [];
     let registrosConsumosOP = []; let dbClientes = [], dbTransportadores = [], dbProveedores = [], dbOrdenesProduccion = [];
+    let dbTornilleria = [], registrosTornilleriaMovimientos = [];
     let maquinaActualKey = "Aglutinadora 1", perfilSeleccionadoAjuste = null;
     let maquinaActivaOperativa = true, ultimaFechaSeleccionada = new Date().toISOString().split('T')[0];
 
@@ -1349,13 +1427,98 @@
     db.collection('ordenes_produccion').onSnapshot(s => { dbOrdenesProduccion = []; s.forEach(d => dbOrdenesProduccion.push({id: d.id, ...d.data()})); renderEstadoOPs(); }, fError);
     db.collection('estado_maquinas').onSnapshot(s => { dbEstadoMaquinasNube = {}; s.forEach(d => { dbEstadoMaquinasNube[d.id] = d.data().operativa; }); const mqObj = Object.values(MAQUINAS_MAP).find(m => m.nombre === maquinaActualKey); maquinaActivaOperativa = dbEstadoMaquinasNube[mqObj ? mqObj.nombre : 'Aglutinadora 1'] !== false; actualizarInterfazEstadoMaquina(); renderVisorMaquinas(); }, fError);
     
-    db.collection('productos_terminados').onSnapshot(s => { let t = []; s.forEach(d => t.push({docId: d.id, ...d.data()})); if(t.length > 0) { dbProductosTerminadosNube = t; dbProductosTerminadosNube.sort((a,b) => obtenerNumConsecutivoPT(a.nombre) - obtenerNumConsecutivoPT(b.nombre)); PRODUCTOS_TERMINADOS_CATALOGO = dbProductosTerminadosNube.map(p => p.nombre || 'Sin Nombre'); } else { PRODUCTOS_TERMINADOS_CATALOGO_INICIAL.forEach(pt => db.collection('productos_terminados').add({nombre:pt})); PRODUCTOS_TERMINADOS_CATALOGO = [...PRODUCTOS_TERMINADOS_CATALOGO_INICIAL]; } filtrarProductoTerminadoSelect(); renderTablaPTConfig(); renderKardexPT(); filtrarOPProductoSelect(); }, fError);
-    db.collection('perfiles').onSnapshot(s => { let t = []; s.forEach(d => t.push({docId: d.id, ...d.data()})); if(t.length > 0) { dbPerfilesNube = t; dbPerfilesNube.sort((a,b) => (a.id||0) - (b.id||0)); DB_PERFILES = dbPerfilesNube.map(p => p.nombre || 'Sin Nombre'); } else { DB_PERFILES_INICIALES.forEach(p => db.collection('perfiles').add(p)); DB_PERFILES = DB_PERFILES_INICIALES.map(p => p.nombre); } renderTablaPerfilesConfig(); cargarSelectsPagina(); renderKardex(); }, fError);
-    db.collection('trabajadores').onSnapshot(s => { listaTrabajadores = []; s.forEach(d => listaTrabajadores.push({id: d.id, nombre: d.data().nombre || 'Desconocido', puestoBase: d.data().puestoBase || '', cuadrilla: d.data().cuadrilla || '', horarioEspecifico: d.data().horarioEspecifico || '', diasLaborales: d.data().diasLaborales || [], activo: d.data().activo !== false})); if(listaTrabajadores.length === 0) { TRABAJADORES_OFICIALES.forEach(nombre => db.collection('trabajadores').add({nombre})); return; } listaTrabajadores.sort((a,b) => String(a.nombre).localeCompare(String(b.nombre))); const selIds = ['prodOperarioSelect','prodOperario2Select','ensOperario1Select','ensOperario2Select','despResponsableSelect','corteOperarioSelect','mpResponsableSelect','entradaResponsableSelect','salidaResponsableSelect','consumoResponsable','mantResponsableSelect']; selIds.forEach(id => { const sel = document.getElementById(id); if(sel) { const vp = sel.value; sel.innerHTML = (id === 'prodOperario2Select' || id === 'ensOperario2Select') ? '<option value="">-- Ninguno --</option>' : ''; listaTrabajadores.forEach(t => { const opt = document.createElement('option'); opt.value = t.nombre; opt.textContent = t.nombre; sel.appendChild(opt); }); if(vp) sel.value = vp; } }); const tb = document.getElementById('tablaTrabajadoresBody'); if(tb) renderTablaTrabajadoresPersonal(); const rnt = document.getElementById('resumenNumTrabajadores'); if(rnt) rnt.textContent = `${listaTrabajadores.length} Trabajadores`; cargarSelectsRRHH(); renderGestionCuadrillas(); renderCarteleraSemanal(); renderTablaDescansos(); renderReporteAsistencias(); cargarSelectNuevoUsuario(); }, fError);
+    let ptSeedInicialHecho = false, perfilesSeedInicialHecho = false, trabajadoresSeedInicialHecho = false;
+    db.collection('productos_terminados').onSnapshot(s => { let t = []; s.forEach(d => t.push({docId: d.id, ...d.data()})); if(t.length > 0) { dbProductosTerminadosNube = t; dbProductosTerminadosNube.sort((a,b) => obtenerNumConsecutivoPT(a.nombre) - obtenerNumConsecutivoPT(b.nombre)); PRODUCTOS_TERMINADOS_CATALOGO = dbProductosTerminadosNube.map(p => p.nombre || 'Sin Nombre'); } else if(!ptSeedInicialHecho) { ptSeedInicialHecho = true; PRODUCTOS_TERMINADOS_CATALOGO_INICIAL.forEach(pt => db.collection('productos_terminados').add({nombre:pt})); PRODUCTOS_TERMINADOS_CATALOGO = [...PRODUCTOS_TERMINADOS_CATALOGO_INICIAL]; } else { dbProductosTerminadosNube = []; PRODUCTOS_TERMINADOS_CATALOGO = []; } filtrarProductoTerminadoSelect(); renderTablaPTConfig(); renderKardexPT(); filtrarOPProductoSelect(); }, fError);
+    db.collection('perfiles').onSnapshot(s => { let t = []; s.forEach(d => t.push({docId: d.id, ...d.data()})); if(t.length > 0) { dbPerfilesNube = t; dbPerfilesNube.sort((a,b) => (a.id||0) - (b.id||0)); DB_PERFILES = dbPerfilesNube.map(p => p.nombre || 'Sin Nombre'); } else if(!perfilesSeedInicialHecho) { perfilesSeedInicialHecho = true; DB_PERFILES_INICIALES.forEach(p => db.collection('perfiles').add(p)); DB_PERFILES = DB_PERFILES_INICIALES.map(p => p.nombre); } else { dbPerfilesNube = []; DB_PERFILES = []; } renderTablaPerfilesConfig(); cargarSelectsPagina(); actualizarSelectsPerfilesDinamicos(); renderKardex(); }, fError);
+    db.collection('trabajadores').onSnapshot(s => { listaTrabajadores = []; s.forEach(d => listaTrabajadores.push({id: d.id, nombre: d.data().nombre || 'Desconocido', puestoBase: d.data().puestoBase || '', cuadrilla: d.data().cuadrilla || '', horarioEspecifico: d.data().horarioEspecifico || '', diasLaborales: d.data().diasLaborales || [], activo: d.data().activo !== false})); if(listaTrabajadores.length === 0 && !trabajadoresSeedInicialHecho) { trabajadoresSeedInicialHecho = true; TRABAJADORES_OFICIALES.forEach(nombre => db.collection('trabajadores').add({nombre})); return; } listaTrabajadores.sort((a,b) => String(a.nombre).localeCompare(String(b.nombre))); const selIds = ['prodOperarioSelect','prodOperario2Select','ensOperario1Select','ensOperario2Select','despResponsableSelect','corteOperarioSelect','mpResponsableSelect','entradaResponsableSelect','salidaResponsableSelect','consumoResponsable','mantResponsableSelect','tornMovResponsable']; selIds.forEach(id => { const sel = document.getElementById(id); if(sel) { const vp = sel.value; sel.innerHTML = (id === 'prodOperario2Select' || id === 'ensOperario2Select') ? '<option value="">-- Ninguno --</option>' : ''; listaTrabajadores.forEach(t => { const opt = document.createElement('option'); opt.value = t.nombre; opt.textContent = t.nombre; sel.appendChild(opt); }); if(vp) sel.value = vp; } }); const tb = document.getElementById('tablaTrabajadoresBody'); if(tb) renderTablaTrabajadoresPersonal(); const rnt = document.getElementById('resumenNumTrabajadores'); if(rnt) rnt.textContent = `${listaTrabajadores.length} Trabajadores`; cargarSelectsRRHH(); renderGestionCuadrillas(); renderCarteleraSemanal(); renderTablaDescansos(); renderReporteAsistencias(); cargarSelectNuevoUsuario(); }, fError);
+
+    db.collection('tornilleria').onSnapshot(s => { dbTornilleria = []; s.forEach(d => dbTornilleria.push({docId: d.id, ...d.data()})); renderTablaTornilleriaConfig(); cargarSelectsTornilleria(); }, fError);
+    db.collection('tornilleria_movimientos').onSnapshot(s => { registrosTornilleriaMovimientos = []; s.forEach(d => registrosTornilleriaMovimientos.push({id: d.id, ...d.data()})); renderKardexTornilleria(); }, fError);
+
+    function nombreTornillo(t) { return `${t.tipo} ${t.referencia}`; }
+
+    function guardarNuevaReferenciaTornilleria(e) {
+      e.preventDefault();
+      const tipo = document.getElementById('nuevoTornilloTipo').value;
+      const referencia = document.getElementById('nuevoTornilloReferencia').value.trim();
+      if (!referencia) return;
+      const nombre = `${tipo} ${referencia}`;
+      if (dbTornilleria.some(t => nombreTornillo(t) === nombre)) { alert('Esa referencia ya existe.'); return; }
+      db.collection('tornilleria').add({ tipo, referencia }).then(() => {
+        document.getElementById('nuevoTornilloReferencia').value = '';
+        alert('✅ Referencia creada.');
+      }).catch(err => alert('Error: ' + err.message));
+    }
+
+    function renderTablaTornilleriaConfig() {
+      const tb = document.getElementById('tablaTornilleriaConfigBody'); if (!tb) return;
+      const b = (document.getElementById('searchTornilleriaConfig')?.value || '').toLowerCase().trim();
+      tb.innerHTML = '';
+      const arr = [...dbTornilleria].filter(t => nombreTornillo(t).toLowerCase().includes(b)).sort((a, b2) => nombreTornillo(a).localeCompare(nombreTornillo(b2)));
+      arr.forEach(t => {
+        tb.innerHTML += `<tr><td>${t.tipo}</td><td>${t.referencia}</td><td><button class="btn btn-danger btn-sm" onclick="borrarRegistroUniversal('tornilleria','${t.docId}','Referencia de Tornillería')">🗑️</button></td></tr>`;
+      });
+      if (arr.length === 0) tb.innerHTML = `<tr><td colspan="3" style="text-align:center;">Sin resultados.</td></tr>`;
+    }
+
+    function crearOpcionesTornilleria() {
+      let html = '<option value="">-- Selecciona Tornillo --</option>';
+      [...dbTornilleria].sort((a,b) => nombreTornillo(a).localeCompare(nombreTornillo(b))).forEach(t => { const n = nombreTornillo(t); html += `<option value="${n}" title="${n}">${n}</option>`; });
+      return html;
+    }
+
+    function actualizarSelectsTornilleriaDinamicos() {
+      document.querySelectorAll('.receta-tornillo, .tu-ens-tornillo').forEach(sel => {
+        const vp = sel.value;
+        sel.innerHTML = crearOpcionesTornilleria();
+        if (vp && Array.from(sel.options).some(o => o.value === vp)) sel.value = vp;
+      });
+    }
+
+    function cargarSelectsTornilleria() {
+      actualizarSelectsTornilleriaDinamicos();
+      const selMov = document.getElementById('tornMovReferencia');
+      if (selMov) {
+        const vp = selMov.value; selMov.innerHTML = '<option value="">-- Selecciona Referencia --</option>';
+        [...dbTornilleria].sort((a,b) => nombreTornillo(a).localeCompare(nombreTornillo(b))).forEach(t => { const n = nombreTornillo(t); const o = document.createElement('option'); o.value = n; o.textContent = n; selMov.appendChild(o); });
+        if (vp && Array.from(selMov.options).some(o => o.value === vp)) selMov.value = vp;
+      }
+    }
+
+    function guardarMovimientoTornilleria(e) {
+      e.preventDefault();
+      const f = document.getElementById('tornMovFecha').value, tipo = document.getElementById('tornMovTipo').value, ref = document.getElementById('tornMovReferencia').value, cant = parseFloat(document.getElementById('tornMovCantidad').value) || 0, motivo = document.getElementById('tornMovMotivo').value.trim() || (tipo === 'ENTRADA' ? 'Entrada manual' : 'Salida manual'), resp = document.getElementById('tornMovResponsable').value;
+      if (!f || !ref || cant <= 0 || !resp) { alert('❌ Completa fecha, referencia, cantidad y responsable.'); return; }
+      db.collection('tornilleria_movimientos').add({ fecha:f, tipo, referencia:ref, cantidad:cant, motivo, responsable:resp, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => {
+        document.getElementById('tornMovCantidad').value = ''; document.getElementById('tornMovMotivo').value = '';
+        alert('✅ Movimiento guardado.');
+      }).catch(err => alert('Error: ' + err.message));
+    }
+
+    function renderKardexTornilleria() {
+      const tb = document.getElementById('tablaKardexTornilleriaBody'); if (!tb) return;
+      const b = (document.getElementById('searchKardexTornilleria')?.value || '').toLowerCase().trim();
+      const mapStock = {}; dbTornilleria.forEach(t => { mapStock[nombreTornillo(t)] = { e:0, s:0 }; });
+      registrosTornilleriaMovimientos.forEach(m => { const ref = m.referencia; if (!ref) return; if (!mapStock[ref]) mapStock[ref] = { e:0, s:0 }; if (m.tipo === 'ENTRADA') mapStock[ref].e += (parseFloat(m.cantidad)||0); else mapStock[ref].s += (parseFloat(m.cantidad)||0); });
+      tb.innerHTML = '';
+      Object.keys(mapStock).filter(ref => ref.toLowerCase().includes(b)).sort((a,b2) => a.localeCompare(b2)).forEach(ref => {
+        const d = mapStock[ref], stock = d.e - d.s;
+        tb.innerHTML += `<tr><td><strong>${ref}</strong></td><td style="color:#10b981;">+${d.e}</td><td style="color:#ef4444;">-${d.s}</td><td><span class="badge badge-stock" style="${stock<0?'background:rgba(239,68,68,0.2);color:#ef4444;':''}">${stock} Unid.</span></td></tr>`;
+      });
+      if (Object.keys(mapStock).length === 0) tb.innerHTML = `<tr><td colspan="4" style="text-align:center;">Sin referencias de tornillería registradas.</td></tr>`;
+    }
 
     function renderTablaTrabajadoresPersonal() {
       const tb = document.getElementById('tablaTrabajadoresBody'); if (!tb) return;
       const b = (document.getElementById('searchTrabajadores')?.value || '').toLowerCase().trim();
+      const conteoNombres = {};
+      listaTrabajadores.forEach(t => { conteoNombres[t.nombre] = (conteoNombres[t.nombre] || 0) + 1; });
+      const nombresDuplicados = Object.keys(conteoNombres).filter(n => conteoNombres[n] > 1);
+      const lblDup = document.getElementById('lblTrabajadoresDuplicados');
+      if (lblDup) {
+        if (nombresDuplicados.length > 0) { lblDup.style.display = 'block'; lblDup.textContent = `⚠️ ${nombresDuplicados.length} trabajador(es) aparecen duplicados (resaltados en rojo abajo). Borra la copia que sobre.`; }
+        else lblDup.style.display = 'none';
+      }
       const arr = listaTrabajadores.filter(t => t.nombre.toLowerCase().includes(b));
       tb.innerHTML = '';
       arr.forEach((t, i) => {
@@ -1367,7 +1530,8 @@
           const detalle = cuenta.rol === 'operario' && cuenta.maquinaAsignada ? ` (${cuenta.maquinaAsignada})` : '';
           rolBadge = `<span style="color:${color}; font-weight:bold; font-size:.75rem; text-transform:capitalize;">${cuenta.rol}${detalle}</span>`;
         }
-        tb.innerHTML += `<tr><td><strong>${i + 1}</strong></td><td>${t.nombre}</td><td>${rolBadge}</td><td><button class="btn btn-danger btn-sm" onclick="eliminarTrabajadorNube('${t.id}')">🗑️</button></td></tr>`;
+        const esDuplicado = conteoNombres[t.nombre] > 1;
+        tb.innerHTML += `<tr style="${esDuplicado ? 'background:rgba(239,68,68,.15);' : ''}"><td><strong>${i + 1}</strong></td><td>${t.nombre}${esDuplicado ? ' <small style="color:#ef4444;">⚠️ duplicado</small>' : ''}</td><td>${rolBadge}</td><td><button class="btn btn-danger btn-sm" onclick="eliminarTrabajadorNube('${t.id}')">🗑️</button></td></tr>`;
       });
       if (arr.length === 0) tb.innerHTML = '<tr><td colspan="4" style="text-align:center;">Sin resultados.</td></tr>';
     }
@@ -1410,7 +1574,15 @@ function switchMachineTab(btnEl, key) {
     function actualizarInterfazEstadoMaquina() { const b = document.getElementById('btnPasadorEstadoMaquina'), f = document.getElementById('formProduccionMaquina'), r = document.getElementById('btnReporteMaquinaDanada'); if(maquinaActivaOperativa) { b.textContent = "🟢 EN FUNCIONAMIENTO (SI)"; b.className = "toggle-status-btn activa"; f.querySelectorAll('input,select,textarea,button').forEach(e => e.disabled = false); r.style.display = "none"; } else { b.textContent = "🔴 DAÑADA (NO)"; b.className = "toggle-status-btn danada"; f.querySelectorAll('input,select,textarea,button').forEach(e => { if(!['prodFecha','prodHorarioSelect','prodObservacion'].includes(e.id)) e.disabled = true; }); document.getElementById('prodObservacion').disabled = false; r.style.display = "block"; } }
     function guardarReporteMaquinaDanadaExplicito() { const o = document.getElementById('prodObservacion').value.trim(); if(!o) { alert("Escribe el motivo del daño."); return; } db.collection('produccion').add({ fecha:document.getElementById('prodFecha').value, horario:document.getElementById('prodHorarioSelect').value, jornada:calcularJornada(document.getElementById('prodHorarioSelect').value), maquina:maquinaActualKey, operario:'DAÑADA', operario1:'N/A', operario2:'N/A', receta:'N/A', referencia:'SIN PRODUCCIÓN', unidades:0, cantidad:0, merma:0, observacion:`DAÑADA: ${o}`, timestamp:firebase.firestore.FieldValue.serverTimestamp() }).then(() => { document.getElementById('prodObservacion').value = ''; alert(`✅ Reporte enviado.`); }); }
     
-    function crearOpcionesPerfiles() { let html = '<option value="">-- Selecciona Perfil --</option>'; DB_PERFILES.forEach(p => { html += `<option value="${p}">${p} (${obtenerPesoPerfilSinCortar(p)} Kg/u)</option>`; }); return html; }
+    function crearOpcionesPerfiles() { let html = '<option value="">-- Selecciona Perfil --</option>'; DB_PERFILES.forEach(p => { html += `<option value="${p}" title="${p} (${obtenerPesoPerfilSinCortar(p)} Kg/u)">${p} (${obtenerPesoPerfilSinCortar(p)} Kg/u)</option>`; }); return html; }
+
+    function actualizarSelectsPerfilesDinamicos() {
+      document.querySelectorAll('.receta-perfil, .pu-ens-perfil, .multi-select-perfil').forEach(sel => {
+        const vp = sel.value;
+        sel.innerHTML = crearOpcionesPerfiles();
+        if (vp && Array.from(sel.options).some(o => o.value === vp)) sel.value = vp;
+      });
+    }
     function agregarFilaPerfil() { const contenedor = document.getElementById('contenedorFilasPerfiles'); if(!contenedor) return; const numFila = contenedor.children.length + 1; const isRequired = numFila === 1 ? 'required' : ''; const div = document.createElement('div'); div.className = 'multi-perfil-row'; div.style = "display:flex; gap:10px; margin-bottom:10px; align-items:center;"; div.innerHTML = `<div style="flex: 2;"><select class="multi-select-perfil" onchange="calcularTotalesMultiPerfil()" ${isRequired}>${crearOpcionesPerfiles()}</select></div><div style="flex: 1;"><input type="number" class="multi-input-cantidad" placeholder="Cant. Unid" min="0" step="1" oninput="calcularTotalesMultiPerfil()" ${isRequired}></div><div class="subtotal-kilos-lbl" style="min-width:70px; font-weight:bold; color:#10b981;">0.00 Kg</div>${numFila > 1 ? '<button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove(); calcularTotalesMultiPerfil();">🗑️</button>' : ''}`; contenedor.appendChild(div); }
     function calcularTotalesMultiPerfil() { const filasSelect = document.querySelectorAll('.multi-select-perfil'), filasCant = document.querySelectorAll('.multi-input-cantidad'), filasLbl = document.querySelectorAll('.subtotal-kilos-lbl'); let totalKilos = 0, totalUnidades = 0, totalKilosCortado = 0; filasSelect.forEach((selectEl, idx) => { const unid = parseFloat(filasCant[idx].value)||0; const subtotalKg = unid * obtenerPesoPerfilSinCortar(selectEl.value); const subtotalKgCortado = unid * obtenerPesoPerfilCortado(selectEl.value); if(filasLbl[idx]) filasLbl[idx].textContent = `${subtotalKg.toFixed(2)} Kg`; totalKilos += subtotalKg; totalUnidades += unid; totalKilosCortado += subtotalKgCortado; }); const lblDisplay = document.getElementById('displayTotalKilosMulti'); if(lblDisplay) lblDisplay.textContent = `${totalKilos.toFixed(2)} Kg / ${totalUnidades} Unid.`; const lblCortado = document.getElementById('displayTotalKilosCortadoMulti'); if(lblCortado) lblCortado.textContent = `${totalKilosCortado.toFixed(2)} Kg`; }
     function reiniciarFilasPerfiles() { const contenedor = document.getElementById('contenedorFilasPerfiles'); if(contenedor) { contenedor.innerHTML = ''; agregarFilaPerfil(); calcularTotalesMultiPerfil(); } }
@@ -1501,7 +1673,7 @@ function switchMachineTab(btnEl, key) {
     }
 
     // ================= CONSUMOS OP (NUEVO) =================
-    function crearOpcionesPerfilesConsumo() { let html = '<option value="">-- Selecciona Perfil --</option>'; DB_PERFILES.forEach(p => { html += `<option value="${p}">${p}</option>`; }); return html; }
+    function crearOpcionesPerfilesConsumo() { let html = '<option value="">-- Selecciona Perfil --</option>'; DB_PERFILES.forEach(p => { html += `<option value="${p}" title="${p}">${p}</option>`; }); return html; }
     function agregarFilaConsumoOP() { const c = document.getElementById('contenedorFilasConsumoOP'); if(!c) return; const n = c.children.length + 1; const isReq = n === 1 ? 'required' : ''; const d = document.createElement('div'); d.className = 'multi-corte-block'; d.style = "display:flex; gap:10px; margin-bottom:5px; align-items:center;"; d.innerHTML = `<div style="flex: 2;"><select class="consumo-select-perfil" ${isReq}>${crearOpcionesPerfilesConsumo()}</select></div><div style="flex: 1;"><input type="number" class="consumo-input-cantidad" placeholder="Cant." min="1" step="1" ${isReq}></div>${n > 1 ? '<button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove();">🗑️</button>' : ''}`; c.appendChild(d); }
     function reiniciarFilasConsumoOP() { const c = document.getElementById('contenedorFilasConsumoOP'); if(c) { c.innerHTML = ''; agregarFilaConsumoOP(); } }
     
@@ -1546,6 +1718,34 @@ function switchMachineTab(btnEl, key) {
       }
     }
 
+    function agregarFilaTornilloUsadoEnsamble(referencia, cantidad, cantEstiba) {
+      const cont = document.getElementById('contenedorTornillosUsadosEnsamble'); if (!cont) return;
+      const d = document.createElement('div');
+      d.className = 'tornillo-usado-ens-row';
+      d.style.cssText = 'display:flex; gap:6px; margin-bottom:6px; align-items:center;';
+      if (cantEstiba) d.dataset.cantEstiba = cantEstiba;
+      d.innerHTML = `<select class="tu-ens-tornillo" style="flex:2; height:32px;">${crearOpcionesTornilleria()}</select><input type="number" class="tu-ens-cantidad" placeholder="Cantidad" value="${cantidad||''}" style="width:100px; height:32px;" oninput="calcularTotalTornillosEnsamble()"><button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove(); calcularTotalTornillosEnsamble();">🗑️</button>`;
+      cont.appendChild(d);
+      if (referencia) d.querySelector('.tu-ens-tornillo').value = referencia;
+      calcularTotalTornillosEnsamble();
+    }
+
+    function leerTornillosUsadosEnsamble() {
+      const filas = document.querySelectorAll('#contenedorTornillosUsadosEnsamble .tornillo-usado-ens-row');
+      const usados = [];
+      filas.forEach(f => {
+        const referencia = f.querySelector('.tu-ens-tornillo').value;
+        const cantidad = parseFloat(f.querySelector('.tu-ens-cantidad').value) || 0;
+        if (referencia && cantidad > 0) usados.push({ referencia, cantidad });
+      });
+      return usados;
+    }
+
+    function calcularTotalTornillosEnsamble() {
+      const total = leerTornillosUsadosEnsamble().reduce((s, t) => s + t.cantidad, 0);
+      const inp = document.getElementById('ensTornillos'); if (inp) inp.value = total;
+    }
+
     function agregarFilaPerfilUsadoEnsamble(perfil, cantidad, cantEstiba) {
       const cont = document.getElementById('contenedorPerfilesUsadosEnsamble'); if (!cont) return;
       const d = document.createElement('div');
@@ -1581,24 +1781,28 @@ function switchMachineTab(btnEl, key) {
       } else {
         if (lbl) lbl.textContent = 'Esta OT no tiene receta definida. Agrega manualmente los perfiles usados si aplica.';
       }
-      if (ot && ot.tornillosPorEstiba > 0 && estibas > 0) {
-        const inpTor = document.getElementById('ensTornillos');
-        if (inpTor && !inpTor.value) inpTor.value = (ot.tornillosPorEstiba * estibas).toFixed(0);
+      const contTor = document.getElementById('contenedorTornillosUsadosEnsamble'); if (contTor) contTor.innerHTML = '';
+      const lblTor = document.getElementById('lblRecetaTornillosAutoEnsamble');
+      if (ot && ot.recetaTornillos && ot.recetaTornillos.length > 0) {
+        ot.recetaTornillos.forEach(r => agregarFilaTornilloUsadoEnsamble(r.referencia, (r.cantidadPorEstiba * estibas) || '', r.cantidadPorEstiba));
+        if (lblTor) lblTor.textContent = `📋 Receta de tornillos sugerida de la OT × ${estibas || 0} estibas. Ajusta si hace falta o usa "🔄 Recalcular" si cambias las estibas.`;
+      } else {
+        if (lblTor) lblTor.textContent = 'Esta OT no tiene receta de tornillos definida. Agrégalos manualmente si aplica.';
+        calcularTotalTornillosEnsamble();
       }
     }
 
     function recalcularPerfilesPorEstibas() {
       const estibas = parseFloat(document.getElementById('ensCantRealizada')?.value) || 0;
+      document.querySelectorAll('#contenedorTornillosUsadosEnsamble .tornillo-usado-ens-row').forEach(row => {
+        const cantEstiba = parseFloat(row.dataset.cantEstiba) || 0;
+        if (cantEstiba > 0) row.querySelector('.tu-ens-cantidad').value = (cantEstiba * estibas).toFixed(0);
+      });
+      calcularTotalTornillosEnsamble();
       document.querySelectorAll('#contenedorPerfilesUsadosEnsamble .perfil-usado-ens-row').forEach(row => {
         const cantEstiba = parseFloat(row.dataset.cantEstiba) || 0;
         if (cantEstiba > 0) row.querySelector('.pu-ens-cantidad').value = (cantEstiba * estibas).toFixed(0);
       });
-      const opCod = document.getElementById('ensOrdenTrabajo')?.value;
-      const ot = dbOrdenesProduccion.find(o => o.codigo === opCod);
-      if (ot && ot.tornillosPorEstiba > 0) {
-        const inpTor = document.getElementById('ensTornillos');
-        if (inpTor) inpTor.value = (ot.tornillosPorEstiba * estibas).toFixed(0);
-      }
     }
 
     function seleccionarProductoPorOP() {
@@ -1611,9 +1815,11 @@ function switchMachineTab(btnEl, key) {
     }
 
     function guardarEnsamble(e) {
-      e.preventDefault(); const ei = document.getElementById('editEnsambleId').value, f = document.getElementById('ensFecha').value, h = document.getElementById('ensHorarioSelect').value, j = calcularJornada(h), o1 = document.getElementById('ensOperario1Select').value, o2 = document.getElementById('ensOperario2Select').value || '', o = (o2 && o2 !== o1) ? `${o1} / ${o2}` : o1, ord = document.getElementById('ensOrdenTrabajo').value, p = document.getElementById('ensProductoSelect').value, cr = parseFloat(document.getElementById('ensCantRealizada').value) || 0, tor = parseFloat(document.getElementById('ensTornillos').value) || 0, obs = document.getElementById('ensObservacion').value.trim();
+      e.preventDefault(); const ei = document.getElementById('editEnsambleId').value, f = document.getElementById('ensFecha').value, h = document.getElementById('ensHorarioSelect').value, j = calcularJornada(h), o1 = document.getElementById('ensOperario1Select').value, o2 = document.getElementById('ensOperario2Select').value || '', o = (o2 && o2 !== o1) ? `${o1} / ${o2}` : o1, ord = document.getElementById('ensOrdenTrabajo').value, p = document.getElementById('ensProductoSelect').value, cr = parseFloat(document.getElementById('ensCantRealizada').value) || 0, obs = document.getElementById('ensObservacion').value.trim();
       if(!p || cr <= 0 || !ord) { alert("❌ Faltan datos obligatorios. Selecciona OP y Producto."); return; }
       const perfilesUsados = leerPerfilesUsadosEnsamble();
+      const tornillosUsados = leerTornillosUsadosEnsamble();
+      const tor = tornillosUsados.reduce((s,t) => s + t.cantidad, 0);
       if(ei) { db.collection('ensamble_procesos').doc(ei).update({ fecha: f, horario: h, jornada: j, operario1: o1, operario2: o2, operario: o, ordenTrabajo: ord, productoTerminado: p, cantRealizada: cr, tornillos: tor, observacion: obs }).then(() => { cancelarEdicionEnsamble(); alert("✅ Ensamble actualizado."); }); }
       else {
         db.collection('ensamble_procesos').add({ fecha: f, horario: h, jornada: j, operario1: o1, operario2: o2, operario: o, ordenTrabajo: ord, productoTerminado: p, cantRealizada: cr, tornillos: tor, observacion: obs, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => {
@@ -1621,19 +1827,20 @@ function switchMachineTab(btnEl, key) {
             const totalKilos = perfilesUsados.reduce((s,pu) => s + (pu.cantidad * obtenerPesoPerfilSinCortar(pu.perfil)), 0);
             db.collection('consumos_op').add({ fecha: f, ordenTrabajo: ord, responsable: o, tornillos: tor, detalles: perfilesUsados, totalKilos, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
           }
-          document.getElementById('ensCantRealizada').value = ''; document.getElementById('ensTornillos').value = ''; document.getElementById('ensObservacion').value = ''; document.getElementById('contenedorPerfilesUsadosEnsamble').innerHTML = '';
-          alert("✅ Guardado." + (perfilesUsados.length > 0 ? " Se registró el consumo de perfiles en Gastos Perfiles (OT)." : ""));
+          tornillosUsados.forEach(t => { db.collection('tornilleria_movimientos').add({ fecha: f, tipo: 'SALIDA', referencia: t.referencia, cantidad: t.cantidad, motivo: `Consumo OT: ${ord}`, responsable: o, timestamp: firebase.firestore.FieldValue.serverTimestamp() }); });
+          document.getElementById('ensCantRealizada').value = ''; document.getElementById('ensTornillos').value = ''; document.getElementById('ensObservacion').value = ''; document.getElementById('contenedorPerfilesUsadosEnsamble').innerHTML = ''; document.getElementById('contenedorTornillosUsadosEnsamble').innerHTML = '';
+          alert("✅ Guardado." + (perfilesUsados.length > 0 ? " Se registró el consumo de perfiles en Gastos Perfiles (OT)." : "") + (tornillosUsados.length > 0 ? " Se descontó el stock de tornillería." : ""));
         });
       }
     }
-    
-    function prepararEdicionEnsamble(id) { 
-      const r = registrosEnsamble.find(x => x.id === id); if(!r) return; switchMainTab(null, 'ensamble_modulo'); 
-      document.getElementById('editEnsambleId').value = r.id; document.getElementById('ensFecha').value = r.fecha || ''; document.getElementById('ensHorarioSelect').value = r.horario || '7am-5pm'; document.getElementById('ensOperario1Select').value = r.operario1 || ''; document.getElementById('ensOperario2Select').value = r.operario2 || ''; 
-      const s = document.getElementById('ensOrdenTrabajo'); if (!Array.from(s.options).some(opt => opt.value === r.ordenTrabajo)) { s.innerHTML += `<option value="${r.ordenTrabajo}" data-prod="${r.productoTerminado}">${r.ordenTrabajo} (Editando)</option>`; } s.value = r.ordenTrabajo || ''; 
-      document.getElementById('ensProductoSelect').value = r.productoTerminado || ''; mostrarVistaPreviaPTEnsamble(); document.getElementById('ensCantRealizada').value = r.cantRealizada || 0; document.getElementById('ensTornillos').value = r.tornillos || 0; document.getElementById('ensObservacion').value = r.observacion || ''; document.getElementById('contenedorPerfilesUsadosEnsamble').innerHTML = ''; document.getElementById('lblRecetaAutoEnsamble').textContent = 'La edición de producción no modifica los perfiles ya consumidos — ajústalos desde "Gastos Perfiles (OT)" si hace falta.'; document.getElementById('btnSubmitEnsamble').textContent = "💾 Actualizar"; document.getElementById('btnCancelarEnsamble').style.display = "block"; window.scrollTo(0,0); 
+
+    function prepararEdicionEnsamble(id) {
+      const r = registrosEnsamble.find(x => x.id === id); if(!r) return; switchMainTab(null, 'ensamble_modulo');
+      document.getElementById('editEnsambleId').value = r.id; document.getElementById('ensFecha').value = r.fecha || ''; document.getElementById('ensHorarioSelect').value = r.horario || '7am-5pm'; document.getElementById('ensOperario1Select').value = r.operario1 || ''; document.getElementById('ensOperario2Select').value = r.operario2 || '';
+      const s = document.getElementById('ensOrdenTrabajo'); if (!Array.from(s.options).some(opt => opt.value === r.ordenTrabajo)) { s.innerHTML += `<option value="${r.ordenTrabajo}" data-prod="${r.productoTerminado}">${r.ordenTrabajo} (Editando)</option>`; } s.value = r.ordenTrabajo || '';
+      document.getElementById('ensProductoSelect').value = r.productoTerminado || ''; mostrarVistaPreviaPTEnsamble(); document.getElementById('ensCantRealizada').value = r.cantRealizada || 0; document.getElementById('ensTornillos').value = r.tornillos || 0; document.getElementById('ensObservacion').value = r.observacion || ''; document.getElementById('contenedorPerfilesUsadosEnsamble').innerHTML = ''; document.getElementById('contenedorTornillosUsadosEnsamble').innerHTML = ''; document.getElementById('lblRecetaAutoEnsamble').textContent = 'La edición de producción no modifica los perfiles ya consumidos — ajústalos desde "Gastos Perfiles (OT)" si hace falta.'; document.getElementById('lblRecetaTornillosAutoEnsamble').textContent = 'La edición de producción no modifica los tornillos ya consumidos.'; document.getElementById('btnSubmitEnsamble').textContent = "💾 Actualizar"; document.getElementById('btnCancelarEnsamble').style.display = "block"; window.scrollTo(0,0);
     }
-    function cancelarEdicionEnsamble() { document.getElementById('editEnsambleId').value = ''; document.getElementById('btnSubmitEnsamble').textContent = "🔨 Registrar Ensamble"; document.getElementById('btnCancelarEnsamble').style.display = "none"; document.getElementById('formEnsamble').reset(); document.getElementById('contenedorPerfilesUsadosEnsamble').innerHTML = ''; document.getElementById('lblRecetaAutoEnsamble').textContent = 'Selecciona una OT con receta para que se sugieran solos, o agrégalos manualmente (ej: reparaciones con gasto extra).'; }
+    function cancelarEdicionEnsamble() { document.getElementById('editEnsambleId').value = ''; document.getElementById('btnSubmitEnsamble').textContent = "🔨 Registrar Ensamble"; document.getElementById('btnCancelarEnsamble').style.display = "none"; document.getElementById('formEnsamble').reset(); document.getElementById('contenedorPerfilesUsadosEnsamble').innerHTML = ''; document.getElementById('contenedorTornillosUsadosEnsamble').innerHTML = ''; document.getElementById('lblRecetaAutoEnsamble').textContent = 'Selecciona una OT con receta para que se sugieran solos, o agrégalos manualmente (ej: reparaciones con gasto extra).'; document.getElementById('lblRecetaTornillosAutoEnsamble').textContent = 'Selecciona una OT con receta de tornillos para que se sugieran solos, o agrégalos manualmente.'; }
     
     function renderTablaEnsamble() {
       const tb = document.getElementById('tablaHistorialEnsambleBody'); if(!tb) return; tb.innerHTML = '';
@@ -1700,9 +1907,11 @@ function switchMachineTab(btnEl, key) {
         const lbl = fila.querySelector('.receta-total-lbl');
         if (lbl) lbl.textContent = (cant * meta).toFixed(0);
       });
-      const torEst = parseFloat(document.getElementById('opTornillosPorEstiba')?.value) || 0;
-      const lblTor = document.getElementById('lblTotalTornillosOP');
-      if (lblTor) lblTor.textContent = `Total: ${(torEst * meta).toFixed(0)}`;
+      document.querySelectorAll('#contenedorRecetaTornillosOP .receta-tornillo-row').forEach(fila => {
+        const cant = parseFloat(fila.querySelector('.receta-tornillo-cantidad').value) || 0;
+        const lbl = fila.querySelector('.receta-tornillo-total-lbl');
+        if (lbl) lbl.textContent = (cant * meta).toFixed(0);
+      });
     }
 
     function leerRecetaOPDesdeForm() {
@@ -1717,15 +1926,46 @@ function switchMachineTab(btnEl, key) {
       return receta;
     }
 
-    function guardarNuevaOP(e) { 
-      e.preventDefault(); const f = document.getElementById('opFecha').value, c = document.getElementById('opCodigo').value.trim().toUpperCase(), p = document.getElementById('opProductoSelect').value, cant = parseInt(document.getElementById('opCantSolicitada').value)||0, editId = document.getElementById('editOPId').value, receta = leerRecetaOPDesdeForm(), tornillosPorEstiba = parseFloat(document.getElementById('opTornillosPorEstiba').value) || 0;
+    function agregarFilaRecetaTornilloOP(referencia, cantidad) {
+      const cont = document.getElementById('contenedorRecetaTornillosOP'); if (!cont) return;
+      const d = document.createElement('div');
+      d.className = 'receta-tornillo-row';
+      d.style.cssText = 'display:flex; gap:6px; align-items:center; margin-bottom:6px;';
+      d.innerHTML = `<select class="receta-tornillo" style="flex:2; height:34px; min-width:0;" onchange="calcularTotalesRecetaOP()">${crearOpcionesTornilleria()}</select>
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center;">
+          <small style="color:var(--text-muted); font-size:.65rem;">Cant/Estiba</small>
+          <input type="number" class="receta-tornillo-cantidad" placeholder="0" value="${cantidad||''}" style="width:100%; height:32px; text-align:center;" oninput="calcularTotalesRecetaOP()">
+        </div>
+        <div style="width:70px; text-align:center;">
+          <small style="color:var(--text-muted); font-size:.65rem; display:block;">Total</small>
+          <span class="receta-tornillo-total-lbl" style="font-weight:bold; color:#f59e0b; font-size:1rem;">0</span>
+        </div>
+        <button type="button" class="btn btn-danger btn-sm" style="width:30px; flex-shrink:0; padding:4px;" onclick="this.closest('.receta-tornillo-row').remove(); calcularTotalesRecetaOP();">🗑️</button>`;
+      cont.appendChild(d);
+      if (referencia) d.querySelector('.receta-tornillo').value = referencia;
+      calcularTotalesRecetaOP();
+    }
+
+    function leerRecetaTornillosOPDesdeForm() {
+      const filas = document.querySelectorAll('#contenedorRecetaTornillosOP .receta-tornillo-row');
+      const receta = [];
+      filas.forEach(f => {
+        const referencia = f.querySelector('.receta-tornillo').value;
+        const cantidad = parseFloat(f.querySelector('.receta-tornillo-cantidad').value) || 0;
+        if (referencia && cantidad > 0) receta.push({ referencia, cantidadPorEstiba: cantidad });
+      });
+      return receta;
+    }
+
+    function guardarNuevaOP(e) {
+      e.preventDefault(); const f = document.getElementById('opFecha').value, c = document.getElementById('opCodigo').value.trim().toUpperCase(), p = document.getElementById('opProductoSelect').value, cant = parseInt(document.getElementById('opCantSolicitada').value)||0, editId = document.getElementById('editOPId').value, receta = leerRecetaOPDesdeForm(), recetaTornillos = leerRecetaTornillosOPDesdeForm(), tornillosPorEstiba = recetaTornillos.reduce((s,r) => s + r.cantidadPorEstiba, 0);
       if(!c) { alert("❌ Error: Escribe un Código de OP."); return; } if(!p) { alert("❌ Error: Selecciona un Producto de la lista."); return; } if(cant <= 0) { alert("❌ Error: Meta debe ser mayor a 0."); return; }
       if(editId) {
-        db.collection('ordenes_produccion').doc(editId).update({ fecha:f, codigo:c, producto:p, cantSolicitada:cant, receta, tornillosPorEstiba }).then(() => { cancelarEdicionOP(); alert("✅ Orden actualizada."); }).catch(err => alert("Error: " + err.message));
+        db.collection('ordenes_produccion').doc(editId).update({ fecha:f, codigo:c, producto:p, cantSolicitada:cant, receta, recetaTornillos, tornillosPorEstiba }).then(() => { cancelarEdicionOP(); alert("✅ Orden actualizada."); }).catch(err => alert("Error: " + err.message));
         return;
       }
-      if(dbOrdenesProduccion.some(o => o.codigo === c)) { alert("⚠️ Esta OP ya está registrada en la meta."); return; } 
-      db.collection('ordenes_produccion').add({ fecha:f, codigo:c, producto:p, cantSolicitada:cant, receta, tornillosPorEstiba, timestamp:firebase.firestore.FieldValue.serverTimestamp() }).then(() => { document.getElementById('opCodigo').value = ''; document.getElementById('opCantSolicitada').value = ''; document.getElementById('opTornillosPorEstiba').value = ''; document.getElementById('contenedorRecetaOP').innerHTML = ''; iniciarRecetaOPVacia(); alert("✅ Orden de Producción creada."); }); 
+      if(dbOrdenesProduccion.some(o => o.codigo === c)) { alert("⚠️ Esta OP ya está registrada en la meta."); return; }
+      db.collection('ordenes_produccion').add({ fecha:f, codigo:c, producto:p, cantSolicitada:cant, receta, recetaTornillos, tornillosPorEstiba, timestamp:firebase.firestore.FieldValue.serverTimestamp() }).then(() => { document.getElementById('opCodigo').value = ''; document.getElementById('opCantSolicitada').value = ''; document.getElementById('contenedorRecetaOP').innerHTML = ''; document.getElementById('contenedorRecetaTornillosOP').innerHTML = ''; iniciarRecetaOPVacia(); alert("✅ Orden de Producción creada."); });
     }
     function borrarOP(id) { if(confirm('¿Borrar la meta de esta OP?')) { db.collection('ordenes_produccion').doc(id).delete(); } }
 
@@ -1736,19 +1976,22 @@ function switchMachineTab(btnEl, key) {
       document.getElementById('opFecha').value = o.fecha || '';
       document.getElementById('opCodigo').value = o.codigo || '';
       document.getElementById('opCantSolicitada').value = o.cantSolicitada || 0;
-      document.getElementById('opTornillosPorEstiba').value = o.tornillosPorEstiba || '';
       const sel = document.getElementById('opProductoSelect');
       if(sel) { for(const opt of sel.options) { if(opt.value === o.producto) { opt.selected = true; break; } } }
       document.getElementById('contenedorRecetaOP').innerHTML = '';
       (o.receta || []).forEach(r => agregarFilaRecetaOP(r.rol, r.perfil, r.cantidadPorEstiba));
+      document.getElementById('contenedorRecetaTornillosOP').innerHTML = '';
+      (o.recetaTornillos || []).forEach(r => agregarFilaRecetaTornilloOP(r.referencia, r.cantidadPorEstiba));
       calcularTotalesRecetaOP();
       document.getElementById('btnSubmitOP').textContent = '💾 Guardar Cambios';
       document.getElementById('btnCancelarEdicionOP').style.display = 'block';
       window.scrollTo(0,0);
     }
 
-    function iniciarRecetaOPVacia() {
+    function iniciarRecetaOPVacia(intentosRestantes) {
       const cont = document.getElementById('contenedorRecetaOP'); if (!cont || cont.children.length > 0) return;
+      if (intentosRestantes === undefined) intentosRestantes = 20;
+      if (DB_PERFILES.length === 0 && intentosRestantes > 0) { setTimeout(() => iniciarRecetaOPVacia(intentosRestantes - 1), 300); return; }
       agregarFilaRecetaOP('Listón Superior');
       agregarFilaRecetaOP('Listón Inferior');
     }
@@ -1759,6 +2002,7 @@ function switchMachineTab(btnEl, key) {
       document.getElementById('btnCancelarEdicionOP').style.display = 'none';
       document.querySelector('#estado_op_modulo form').reset();
       document.getElementById('contenedorRecetaOP').innerHTML = '';
+      document.getElementById('contenedorRecetaTornillosOP').innerHTML = '';
       iniciarRecetaOPVacia();
     }
 
@@ -1777,8 +2021,9 @@ function switchMachineTab(btnEl, key) {
           if(o.meta > 0) { if(o.hechas >= o.meta) estadoProd = '<span class="badge badge-prod">🟢 FABRICADA</span>'; else if(o.hechas > 0) estadoProd = '<span class="badge badge-dia">🟡 EN PROCESO</span>'; else estadoProd = '<span class="badge" style="background:#475569;color:white;">⚪ PENDIENTE</span>'; } else { estadoProd = '<span class="badge" style="background:#475569;color:white;">- Sin Meta -</span>'; }
           if(o.despachadas >= o.meta && o.meta > 0) { estadoLogistica = '<span class="badge" style="background:#0284c7;color:white;">📦 100% DESPACHADA</span>'; } else if(o.despachadas >= o.hechas && o.hechas > 0 && o.meta === 0) { estadoLogistica = '<span class="badge" style="background:#0284c7;color:white;">📦 DESP. Y FACTURADA</span>'; } else if(o.despachadas > 0) { estadoLogistica = '<span class="badge badge-noche">🚚 DESP. PARCIAL</span>'; } else { estadoLogistica = '<span class="badge" style="background:#475569;color:white;">⏳ EN BODEGA</span>'; }
           const btnBorrar = o.esOficial ? `<div style="display:flex;gap:4px;"><button class="btn btn-warning btn-sm" onclick="prepararEdicionOP('${o.id}')">✏️</button><button class="btn btn-danger btn-sm" onclick="borrarOP('${o.id}')">🗑️</button></div>` : `<button class="btn" style="background:#475569; color:#94a3b8; cursor:help;" onclick="alert('Esta orden se creó automáticamente por un Ensamble. Borra el ensamble asociado.')" title="Orden generada automáticamente (No se puede borrar aquí)">🔒</button>`;
-          const torTexto = o.tornillosPorEstiba > 0 ? ` | Tornillos: ${o.tornillosPorEstiba}/estiba` : '';
-          const recetaTag = (o.receta && o.receta.length > 0) ? ` <span title="Receta: ${o.receta.map(r=>`${r.rol||'Perfil'}: ${r.perfil} x${r.cantidadPorEstiba}`).join(' | ')}${torTexto}" style="color:#a855f7; cursor:help;">🧾</span>` : '';
+          const torTexto = (o.recetaTornillos && o.recetaTornillos.length > 0) ? ` | Tornillos: ${o.recetaTornillos.map(r=>`${r.referencia} x${r.cantidadPorEstiba}`).join(', ')}` : (o.tornillosPorEstiba > 0 ? ` | Tornillos: ${o.tornillosPorEstiba}/estiba` : '');
+          const tieneReceta = (o.receta && o.receta.length > 0) || (o.recetaTornillos && o.recetaTornillos.length > 0);
+          const recetaTag = tieneReceta ? ` <span title="Receta: ${(o.receta||[]).map(r=>`${r.rol||'Perfil'}: ${r.perfil} x${r.cantidadPorEstiba}`).join(' | ')}${torTexto}" style="color:#a855f7; cursor:help;">🧾</span>` : '';
           const rowHTML = `<tr><td><strong style="color:#f59e0b">${o.codigo}</strong><br><small>${o.fecha}</small></td><td><small style="color:#38bdf8">${o.producto}</small>${recetaTag}</td><td>${o.meta>0?o.meta:'-'}</td><td><strong style="color:#10b981">${o.hechas}</strong></td><td style="color:#ef4444; font-weight:bold;">${faltanDisplay}</td><td>${estadoProd}</td><td>${estadoLogistica}</td><td>${btnBorrar}</td></tr>`;
           if (o.meta > 0 && o.hechas >= o.meta && o.despachadas >= o.meta) { tbTerminadas.innerHTML += rowHTML; } else { tbActivas.innerHTML += rowHTML; }
         });
@@ -1895,7 +2140,7 @@ function switchMachineTab(btnEl, key) {
     }
 
     // ================= CORTE Y DESPACHOS =================
-    function crearOpcionesPerfilesCorte(o) { let h = `<option value="">-- Selecciona --</option>`; DB_PERFILES.forEach(p => { const w = o ? obtenerPesoPerfilSinCortar(p) : obtenerPesoPerfilCortado(p); h += `<option value="${p}">${p} (${w} Kg)</option>`; }); return h; }
+    function crearOpcionesPerfilesCorte(o) { let h = `<option value="">-- Selecciona --</option>`; DB_PERFILES.forEach(p => { const w = o ? obtenerPesoPerfilSinCortar(p) : obtenerPesoPerfilCortado(p); h += `<option value="${p}" title="${p} (${w} Kg)">${p} (${w} Kg)</option>`; }); return h; }
     function agregarFilaCorteMulti() { const c = document.getElementById('contenedorFilasMultiCorte'); if(!c) return; const n = c.children.length + 1; const req = n === 1 ? 'required' : ''; const d = document.createElement('div'); d.className = 'multi-corte-block'; d.innerHTML = `<label style="display:flex;align-items:center;gap:6px;font-size:.75rem;margin-bottom:6px;cursor:pointer;color:var(--text-muted);"><input type="checkbox" class="corte-mismo-perfil" checked onchange="toggleMismoPerfilCorte(this)" style="width:auto;"> Es el mismo perfil (solo cambia el peso al cortar)</label><div style="display:flex;gap:8px;margin-bottom:6px;align-items:flex-end;"><div style="flex:1;min-width:0;"><small style="color:#f59e0b;">Perfil:</small><select class="corte-select-origen" onchange="calcularTotalesCorteMulti()" ${req}>${crearOpcionesPerfilesCorte(true)}</select></div><div style="width:90px;flex-shrink:0;"><small style="color:#f59e0b;">Cant. Cortada:</small><input type="number" class="corte-cant-origen" ${req} oninput="calcularTotalesCorteMulti()"></div>${n > 1 ? '<button type="button" class="btn btn-danger btn-sm" onclick="this.closest(\'.multi-corte-block\').remove(); calcularTotalesCorteMulti();">🗑️</button>' : ''}</div><div class="corte-avanzado-destino" style="display:none;"><div style="display:flex;gap:8px;margin-bottom:5px;align-items:flex-end;"><div style="flex:1;min-width:0;"><small style="color:#10b981;">Convertir a Perfil (si es distinto):</small><select class="corte-select-destino" onchange="calcularTotalesCorteMulti()">${crearOpcionesPerfilesCorte(false)}</select></div><div style="width:90px;flex-shrink:0;"><small style="color:#10b981;">Cant. Resultante:</small><input type="number" class="corte-cant-destino" oninput="calcularTotalesCorteMulti()"></div></div></div><div style="font-size:0.8rem;text-align:right;color:var(--text-muted);" class="subtotal-corte-lbl">Merma: 0.00 Kg</div>`; c.appendChild(d); }
 
     function toggleMismoPerfilCorte(cb) { const bloque = cb.closest('.multi-corte-block'); const avanzado = bloque.querySelector('.corte-avanzado-destino'); avanzado.style.display = cb.checked ? 'none' : 'block'; calcularTotalesCorteMulti(); }
@@ -2180,6 +2425,14 @@ function switchMachineTab(btnEl, key) {
       }).catch(err => alert("Error: " + err.message));
     }
 
+    function restaurarCatalogoPerfilesOficial() {
+      if (!confirm("Esto agregará de nuevo cualquier perfil del catálogo oficial (128 Ref) que falte, sin duplicar ni pisar pesos ya existentes. ¿Continuar?")) return;
+      const idsExistentes = new Set(dbPerfilesNube.map(p => parseInt(p.id) || 0));
+      let agregados = 0;
+      DB_PERFILES_INICIALES.forEach(p => { if (!idsExistentes.has(p.id)) { db.collection('perfiles').add(p); agregados++; } });
+      alert(agregados > 0 ? `✅ ${agregados} perfil(es) restaurado(s).` : "El catálogo oficial ya está completo.");
+    }
+
     function actualizarPerfilCatalogo(docId) {
       const pIn = parseFloat(document.getElementById(`editPerfilIn_${docId}`).value) || 0;
       const pOut = parseFloat(document.getElementById(`editPerfilOut_${docId}`).value) || 0;
@@ -2205,11 +2458,20 @@ function switchMachineTab(btnEl, key) {
       const tb = document.getElementById('tablaPerfilesConfigBody'); if (!tb) return;
       const b = (document.getElementById('searchPerfilConfig')?.value || '').toLowerCase().trim();
       tb.innerHTML = '';
+      const conteoNombres = {};
+      dbPerfilesNube.forEach(p => { conteoNombres[p.nombre] = (conteoNombres[p.nombre] || 0) + 1; });
+      const nombresDuplicados = Object.keys(conteoNombres).filter(n => conteoNombres[n] > 1);
+      const lblDup = document.getElementById('lblPerfilesDuplicados');
+      if (lblDup) {
+        if (nombresDuplicados.length > 0) { lblDup.style.display = 'block'; lblDup.textContent = `⚠️ ${nombresDuplicados.length} perfil(es) aparecen duplicados (resaltados en rojo abajo). Revisa los pesos de cada copia y borra la que no corresponda.`; }
+        else lblDup.style.display = 'none';
+      }
       const arr = [...dbPerfilesNube].filter(p => String(p.nombre || '').toLowerCase().includes(b)).sort((a, b2) => (a.id || 0) - (b2.id || 0));
       arr.forEach(p => {
-        tb.innerHTML += `<tr><td>${p.nombre}</td><td><input type="number" step="0.01" id="editPerfilIn_${p.docId}" value="${p.pesoSinCortar || 0}" style="width:80px;height:26px;"></td><td><input type="number" step="0.01" id="editPerfilOut_${p.docId}" value="${p.pesoCortado || p.pesoSinCortar || 0}" style="width:80px;height:26px;"></td><td><button class="btn btn-success btn-sm" onclick="actualizarPerfilCatalogo('${p.docId}')">💾</button></td></tr>`;
+        const esDuplicado = conteoNombres[p.nombre] > 1;
+        tb.innerHTML += `<tr style="${esDuplicado ? 'background:rgba(239,68,68,.15);' : ''}"><td>${p.nombre}${esDuplicado ? ' <small style="color:#ef4444;">⚠️ duplicado</small>' : ''}</td><td><input type="number" step="0.01" id="editPerfilIn_${p.docId}" value="${p.pesoSinCortar || 0}" style="width:80px;height:26px;"></td><td><input type="number" step="0.01" id="editPerfilOut_${p.docId}" value="${p.pesoCortado || p.pesoSinCortar || 0}" style="width:80px;height:26px;"></td><td><button class="btn btn-success btn-sm" onclick="actualizarPerfilCatalogo('${p.docId}')">💾</button></td><td><button class="btn btn-danger btn-sm" onclick="borrarRegistroUniversal('perfiles','${p.docId}','Perfil')">🗑️</button></td></tr>`;
       });
-      if (arr.length === 0) tb.innerHTML = `<tr><td colspan="4" style="text-align:center;">Sin resultados.</td></tr>`;
+      if (arr.length === 0) tb.innerHTML = `<tr><td colspan="5" style="text-align:center;">Sin resultados.</td></tr>`;
     }
 
     function actualizarProductoTerminadoCatalogo(docId) {
@@ -2219,6 +2481,7 @@ function switchMachineTab(btnEl, key) {
     }
 
     function renderTablaPTConfig() {
+      const lblConteo = document.getElementById('lblConteoPTActual'); if (lblConteo) lblConteo.textContent = dbProductosTerminadosNube.length;
       const tb = document.getElementById('tablaPTConfigBody'); if (!tb) return;
       const b = (document.getElementById('searchPTConfig')?.value || '').toLowerCase().trim();
       tb.innerHTML = '';
@@ -2227,6 +2490,57 @@ function switchMachineTab(btnEl, key) {
         tb.innerHTML += `<tr><td><input type="text" id="editPTNombre_${p.docId}" value="${p.nombre}" style="height:26px;"></td><td style="white-space:nowrap;"><button class="btn btn-success btn-sm" onclick="actualizarProductoTerminadoCatalogo('${p.docId}')">💾</button> <button class="btn btn-danger btn-sm" onclick="borrarRegistroUniversal('productos_terminados','${p.docId}','Producto Terminado')">🗑️</button></td></tr>`;
       });
       if (arr.length === 0) tb.innerHTML = `<tr><td colspan="2" style="text-align:center;">Sin resultados.</td></tr>`;
+    }
+
+    async function borrarDocsEnLotes(coleccion, docIds) {
+      const CHUNK = 450;
+      for (let i = 0; i < docIds.length; i += CHUNK) {
+        const batch = db.batch();
+        docIds.slice(i, i + CHUNK).forEach(id => batch.delete(db.collection(coleccion).doc(id)));
+        await batch.commit();
+      }
+    }
+
+    async function agregarDocsEnLotes(coleccion, docs) {
+      const CHUNK = 450;
+      for (let i = 0; i < docs.length; i += CHUNK) {
+        const batch = db.batch();
+        docs.slice(i, i + CHUNK).forEach(d => batch.set(db.collection(coleccion).doc(), d));
+        await batch.commit();
+      }
+    }
+
+    function actualizarConteoPTMasivo() {
+      const lbl = document.getElementById('lblConteoPTMasivo'); if (!lbl) return;
+      const lineas = (document.getElementById('textareaPTMasivo')?.value || '').split('\n').map(l => l.trim()).filter(l => l);
+      lbl.textContent = lineas.length;
+    }
+
+    async function confirmarBorrarTodoCatalogoPT() {
+      const docIds = dbProductosTerminadosNube.map(p => p.docId);
+      if (docIds.length === 0) { alert('El catálogo ya está vacío.'); return; }
+      if (!confirm(`⚠️ Esto borrará los ${docIds.length} productos terminados del catálogo actual. Esta acción no se puede deshacer. ¿Continuar?`)) return;
+      try {
+        await borrarDocsEnLotes('productos_terminados', docIds);
+        alert(`✅ Se borraron ${docIds.length} productos del catálogo.`);
+      } catch (err) { alert('Error: ' + err.message); }
+    }
+
+    async function subirListadoMasivoPT(reemplazar) {
+      const lineas = (document.getElementById('textareaPTMasivo')?.value || '').split('\n').map(l => l.trim()).filter(l => l);
+      if (lineas.length === 0) { alert('Pega al menos un producto, uno por línea.'); return; }
+      const docIdsActuales = dbProductosTerminadosNube.map(p => p.docId);
+      const mensaje = reemplazar
+        ? `⚠️ Esto BORRARÁ los ${docIdsActuales.length} productos actuales del catálogo y subirá ${lineas.length} nuevos. Esta acción no se puede deshacer. ¿Continuar?`
+        : `Se agregarán ${lineas.length} productos nuevos al catálogo actual (sin borrar los ${docIdsActuales.length} existentes). ¿Continuar?`;
+      if (!confirm(mensaje)) return;
+      try {
+        if (reemplazar && docIdsActuales.length > 0) await borrarDocsEnLotes('productos_terminados', docIdsActuales);
+        await agregarDocsEnLotes('productos_terminados', lineas.map(nombre => ({ nombre })));
+        document.getElementById('textareaPTMasivo').value = '';
+        actualizarConteoPTMasivo();
+        alert(`✅ Listo. Se subieron ${lineas.length} productos terminados.`);
+      } catch (err) { alert('Error: ' + err.message); }
     }
 
     function guardarNuevoCliente(e) {
@@ -3162,7 +3476,7 @@ function switchMachineTab(btnEl, key) {
 
     const PUESTOS_BASE_RRHH = ['Aglutinadora 1','Aglutinadora 2','Aglutinadora 3','Extrusora Principal','Molino 1','Molino 2','Bitruder 1','Ensamble','Sierra','Guillotina','Mezclador','Logística','Montacargas','Mantenimiento','Líder','Auxiliar Administrativo'];
     const PUESTOS_SIN_ROTACION = ['Logística','Auxiliar Administrativo'];
-    const MAQUINAS_CON_REEMPLAZO = ['Aglutinadora 1','Aglutinadora 2','Aglutinadora 3','Extrusora'];
+    const MAQUINAS_CON_REEMPLAZO = ['Aglutinadora 1','Aglutinadora 2','Aglutinadora 3','Extrusora Principal'];
     const HORARIOS_DIA_RRHH = ['6am-6pm','7am-5pm','6am-4pm','8am-6pm'];
     const HORARIOS_NOCHE_RRHH = ['6pm-6am','7pm-5am','6pm-4am','8pm-6am'];
     const DIAS_SEMANA_RRHH = ['LUN','MAR','MIE','JUE','VIE','SAB','DOM'];
@@ -3521,7 +3835,7 @@ function switchMachineTab(btnEl, key) {
           let heredado = false;
           if (!guardado) {
             const slotIdx = obtenerSlotHeredado(t.nombre, idx, semanaVisibleLunesRRHH);
-            const lista = SLOTS_DESCANSO[jornada][tipo] || [];
+            const lista = (SLOTS_DESCANSO[jornada] || SLOTS_DESCANSO.DIA)[tipo] || [];
             if (slotIdx !== null && lista[slotIdx]) { horarioPreseleccionado = lista[slotIdx]; heredado = true; }
           }
           let selectReemplazo = '<small style="color:var(--text-muted);">No aplica</small>';
@@ -4283,12 +4597,14 @@ function switchMachineTab(btnEl, key) {
       try { renderTablaPTConfig(); } catch(e) {}
       try { renderTablaPerfilesConfig(); } catch(e) {}
       try { renderTablaConsumosOP(); } catch(e) {}
+      try { renderTablaTornilleriaConfig(); } catch(e) {}
+      try { renderKardexTornilleria(); } catch(e) {}
     }
 
     // ================= ARRANQUE =================
     document.addEventListener('DOMContentLoaded', () => {
       const hoy = new Date().toISOString().split('T')[0];
-      ['prodFecha','ensFecha','despFecha','corteFecha','mpFecha','entradaFecha','salidaFecha','filterFechaDiaria','opFecha','consumoFecha','mantFecha','excSemanaLunes','reporteDiarioFecha'].forEach(id=>{
+      ['prodFecha','ensFecha','despFecha','corteFecha','mpFecha','entradaFecha','salidaFecha','filterFechaDiaria','opFecha','consumoFecha','mantFecha','excSemanaLunes','reporteDiarioFecha','tornMovFecha'].forEach(id=>{
         if(document.getElementById(id)) document.getElementById(id).value = hoy;
       });
       actualizarCalculoJornada();
