@@ -169,6 +169,7 @@
         </div>
       </div>
       <nav class="sidebar-nav">
+        <button class="sidebar-item-btn" onclick="switchMainTab(this, 'cuadro_ordenes_modulo')" style="background: rgba(168,85,247,.15); border: 1px solid #a855f7; border-radius: 6px; margin: 0 10px 6px 10px; font-weight: bold; color: #a855f7;">📅 Cuadro de Órdenes</button>
         <button class="sidebar-item-btn" onclick="switchMainTab(this, 'reporte_diario_modulo')" style="background: rgba(245,158,11,.15); border: 1px solid #f59e0b; border-radius: 6px; margin: 0 10px 6px 10px; font-weight: bold; color: #f59e0b;">📋 Reporte Diario</button>
         <button class="sidebar-item-btn" onclick="switchMainTab(this, 'sumatoria_kilos_modulo')" style="background: rgba(16,185,129,.15); border: 1px solid #10b981; border-radius: 6px; margin: 0 10px 6px 10px; font-weight: bold; color: #10b981;">📊 Sumatoria Mensual de Kilos</button>
         <button class="sidebar-item-btn" onclick="switchMainTab(this, 'consumo_perfiles_op_modulo')" style="background: rgba(56,189,248,.15); border: 1px solid #38bdf8; border-radius: 6px; margin: 0 10px 12px 10px; font-weight: bold; color: #38bdf8;">📐 Perfiles Gastados por OP (Mes)</button>
@@ -191,6 +192,15 @@
             <div style="padding:10px 15px 4px 35px; font-size:.68rem; color:var(--text-muted); border-top:1px solid var(--border-color); margin-top:6px;">Otros movimientos de perfiles</div>
             <button class="sidebar-item-btn" onclick="switchMainTab(this, 'entradas_modulo')">Entradas Perfiles (Bodega 5)</button>
             <button class="sidebar-item-btn" onclick="switchMainTab(this, 'salidas_modulo')">Salidas Perfiles (Bodega 6)</button>
+          </div>
+        </div>
+        <div class="sidebar-group">
+          <button class="sidebar-btn" onclick="toggleSidebarGroup(this)"><span>📦 Bodega General</span></button>
+          <div class="sidebar-menu-content">
+            <button class="sidebar-item-btn" onclick="switchMainTab(this, 'bodega_entrada_modulo')">➕ Registrar Entrada</button>
+            <button class="sidebar-item-btn" onclick="switchMainTab(this, 'bodega_bd_entradas_modulo')">🗄️ Base de Datos Entradas</button>
+            <button class="sidebar-item-btn" onclick="switchMainTab(this, 'bodega_salida_modulo')">➖ Registrar Salida</button>
+            <button class="sidebar-item-btn" onclick="switchMainTab(this, 'bodega_bd_salidas_modulo')">🗄️ Base de Datos Salidas</button>
           </div>
         </div>
         <div class="sidebar-group">
@@ -386,6 +396,39 @@
         </div>
       </div>
 
+      <div id="cuadro_ordenes_modulo" class="tab-content">
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+            <div>
+              <h2 style="color: #a855f7; margin-bottom:4px;">📅 Cuadro de Órdenes</h2>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">Vista rápida y visual para ventas y visualizadores: qué órdenes están en proceso, listas o en espera. Es un cuadro por día — como un calendario: cámbiate de fecha para ver o editar el cuadro de ese día. Edítalo al llegar en la mañana (con lo que produjo la noche anterior) y otra vez a las 5pm antes de salir.</p>
+            </div>
+            <div style="display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap;" class="no-print">
+              <button onclick="shiftDiaCuadroOrdenes(-1)">◂ Día Anterior</button>
+              <div class="form-group" style="margin-bottom:0;"><label>Fecha</label><input type="date" id="cuadroOrdenesFecha" onchange="cargarCuadroOrdenes(this.value)"></div>
+              <button onclick="shiftDiaCuadroOrdenes(1)">Día Siguiente ▸</button>
+              <button class="btn" style="width:auto; background:#6366f1;" onclick="irHoyCuadroOrdenes()">📍 Hoy</button>
+              <button class="btn" style="width:auto; background:#334155;" onclick="copiarCuadroOrdenesDiaAnterior()">📋 Copiar Día Anterior</button>
+              <button class="btn btn-success" style="width:auto;" onclick="guardarCuadroOrdenes()">💾 Guardar Cuadro del Día</button>
+              <button class="btn" style="width:auto; background:#0284c7;" onclick="window.print()">🖨️ Imprimir</button>
+            </div>
+          </div>
+          <p id="lblCuadroOrdenesActualizado" style="font-size:.75rem; color:var(--text-muted); margin-top:8px;"></p>
+        </div>
+        <div class="summary" id="resumenCuadroOrdenes" style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:15px;"></div>
+        <div class="card">
+          <div style="overflow-x:auto;">
+            <table style="min-width:1500px;">
+              <thead><tr>
+                <th>Fecha Recibido</th><th>OT</th><th>Cantidad</th><th>Referencia</th><th>Prioridad</th><th>Hecho</th><th>Restante</th><th>Observación</th><th>Fase</th><th>Fecha Terminada</th><th>Fecha Compromiso Comercial</th><th>Fecha Estimada Entrega</th><th></th>
+              </tr></thead>
+              <tbody id="tablaCuadroOrdenesBody"></tbody>
+            </table>
+          </div>
+          <button type="button" class="btn" style="background:#a855f7; margin-top:10px;" onclick="agregarFilaCuadroOrdenes()">➕ Agregar Fila</button>
+        </div>
+      </div>
+
       <div id="consumo_perfiles_op_modulo" class="tab-content">
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
@@ -564,11 +607,11 @@
               <div class="form-group"><label style="color: #10b981;">Cantidad Solicitada (Meta)</label><input type="number" id="opCantSolicitada" min="1" step="1" oninput="calcularTotalesRecetaOP()"></div>
               <div class="form-group">
                 <label style="color: #a855f7;">🧾 Despiece de la Estiba (opcional)</label>
-                <p style="font-size:.7rem; color:var(--text-muted); margin:2px 0 6px 0;">Ej: Listón Superior = Perfil 70 x7, Listón Inferior = Perfil 82 x4. El "Total" se calcula solo multiplicando por la Meta de arriba.</p>
+                <p style="font-size:.7rem; color:var(--text-muted); margin:2px 0 6px 0;">Ej: Listón Superior = Perfil 70 x7, Listón Inferior = Perfil 82 x4. El "Total" se calcula solo multiplicando por la Meta de arriba. Marca "Manual" en una parte cuando el pedido no es estándar (ej: huacales, estibas chicas) y quieras escribir la cantidad total fija en vez de por estiba.</p>
                 <div id="contenedorRecetaOP"></div>
                 <button type="button" class="btn btn-sm" style="background:#a855f7; width:100%; margin-top:6px;" onclick="agregarFilaRecetaOP()">+ Agregar Parte de la Estiba</button>
                 <label style="color: #f59e0b; margin-top:12px; display:block;">🔩 Tornillos por Estiba (Despiece)</label>
-                <p style="font-size:.7rem; color:var(--text-muted); margin:2px 0 6px 0;">Ej: Tornillo Drywall 8x2 x376, Tornillo Drywall 12x3 x32. El "Total" se calcula multiplicando por la Meta de arriba.</p>
+                <p style="font-size:.7rem; color:var(--text-muted); margin:2px 0 6px 0;">Ej: Tornillo Drywall 8x2 x376, Tornillo Drywall 12x3 x32. El "Total" se calcula multiplicando por la Meta de arriba. Igual puedes marcar "Manual" para una cantidad fija.</p>
                 <div id="contenedorRecetaTornillosOP"></div>
                 <button type="button" class="btn btn-sm" style="background:#f59e0b; color:#000; width:100%; margin-top:6px;" onclick="agregarFilaRecetaTornilloOP()">+ Agregar Tornillo</button>
               </div>
@@ -766,6 +809,105 @@
             </form>
           </div>
           <div class="card"><h3>Historial Bodega 6</h3><table><thead><tr><th>Fecha</th><th>Motivo</th><th>Perfil</th><th>Cant.</th><th>Responsable</th><th>Acción</th></tr></thead><tbody id="tablaSalidasBody"></tbody></table></div>
+        </div>
+      </div>
+
+      <div id="bodega_entrada_modulo" class="tab-content">
+        <div class="grid-2">
+          <div class="card form-panel">
+            <h3 style="color: #10b981;">➕ Registrar Entrada de Bodega</h3>
+            <form onsubmit="guardarEntradaBodega(event)">
+              <div style="display:flex; gap:10px;">
+                <div class="form-group" style="flex:1;"><label>Consecutivo</label><input type="number" id="bodEntConsecutivo" required></div>
+                <div class="form-group" style="flex:2;"><label>Fecha</label><input type="date" id="bodEntFecha" onchange="recordarFechaInput(this)" required></div>
+              </div>
+              <div style="display:flex; gap:10px;">
+                <div class="form-group" style="flex:1;"><label style="color:#f59e0b;">Transportador</label><input type="text" id="bodEntTransportador" list="listTransportadores" placeholder="Nombre..." style="text-transform:uppercase;"></div>
+                <div class="form-group" style="flex:1;"><label style="color:#38bdf8;">Proveedor</label><input type="text" id="bodEntProveedor" list="listProveedores" placeholder="Nombre..." required style="text-transform:uppercase;"><datalist id="listProveedores"></datalist></div>
+              </div>
+              <label style="color:#10b981; margin-top:6px; display:block;">📋 Items de la Entrada</label>
+              <div id="contenedorItemsEntrada"></div>
+              <button type="button" class="btn btn-sm" style="background:#10b981; width:100%; margin-top:6px;" onclick="agregarFilaItemBodega('contenedorItemsEntrada')">➕ Añadir Otro Item</button>
+              <button type="submit" class="btn btn-success" style="margin-top:12px;">💾 Guardar Entrada</button>
+            </form>
+          </div>
+          <div class="card">
+            <h3>Últimas Entradas Registradas</h3>
+            <table><thead><tr><th>Consec.</th><th>Fecha</th><th>Items</th><th>Proveedor</th><th>Acción</th></tr></thead><tbody id="tablaUltimasEntradasBodegaBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <div id="bodega_bd_entradas_modulo" class="tab-content">
+        <div class="card">
+          <h2 style="color:#10b981; margin-bottom:4px;">🗄️ Base de Datos - Entradas de Bodega</h2>
+          <p style="font-size:.8rem; color:var(--text-muted); margin-bottom:12px;">Busca por consecutivo, referencia o proveedor. Filtra por proveedor y rango de fechas.</p>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;" class="no-print">
+            <input type="text" class="search-box" id="searchBodEntradas" placeholder="🔍 Buscar por consecutivo, referencia o proveedor..." oninput="renderTablaBodEntradas()" style="flex:2; min-width:220px; margin-bottom:0;">
+            <select id="filterProveedorBodEntradas" onchange="renderTablaBodEntradas()" style="flex:1; min-width:160px;"><option value="todos">Todos los proveedores</option></select>
+            <input type="date" id="filterFechaDesdeBodEntradas" onchange="renderTablaBodEntradas()" style="flex:1; min-width:140px;">
+            <input type="date" id="filterFechaHastaBodEntradas" onchange="renderTablaBodEntradas()" style="flex:1; min-width:140px;">
+          </div>
+          <div style="overflow-x:auto;"><table><thead><tr><th>Consecutivo</th><th>Fecha</th><th>Items</th><th>Transportador</th><th>Proveedor</th><th>Acción</th></tr></thead><tbody id="tablaBodEntradasBody"></tbody></table></div>
+        </div>
+      </div>
+
+      <div id="bodega_salida_modulo" class="tab-content">
+        <div class="grid-2">
+          <div class="card form-panel">
+            <h3 style="color: #ef4444;">➖ Registrar Salida de Bodega</h3>
+            <div class="form-group">
+              <label>Tipo de Salida</label>
+              <div style="display:flex; gap:8px;">
+                <button type="button" id="btnTipoSalidaMaterial" class="btn btn-sm" style="flex:1; background:#ef4444;" onclick="cambiarTipoSalidaBodega('material')">📦 Material / Máquina</button>
+                <button type="button" id="btnTipoSalidaOrden" class="btn btn-sm" style="flex:1; background:#334155;" onclick="cambiarTipoSalidaBodega('orden')">🧾 Orden de Fabricación</button>
+              </div>
+            </div>
+            <input type="hidden" id="bodSalTipo" value="material">
+            <form onsubmit="guardarSalidaBodega(event)">
+              <div style="display:flex; gap:10px;">
+                <div class="form-group" style="flex:1;"><label>Consecutivo</label><input type="number" id="bodSalConsecutivo" required></div>
+                <div class="form-group" style="flex:2;"><label>Fecha</label><input type="date" id="bodSalFecha" onchange="recordarFechaInput(this)" required></div>
+              </div>
+              <div class="form-group"><label style="color:#f59e0b;">Transportador</label><input type="text" id="bodSalTransportador" list="listTransportadores" placeholder="Nombre..." style="text-transform:uppercase;"></div>
+
+              <div id="grupoSalidaMaterial">
+                <div class="form-group"><label style="color:#a855f7;">Destino / Entregado a</label><input type="text" id="bodSalDestino" placeholder="Cliente, área o proyecto..." style="text-transform:uppercase;"></div>
+                <label style="color:#ef4444; margin-top:6px; display:block;">📋 Items de la Salida</label>
+                <div id="contenedorItemsSalida"></div>
+                <button type="button" class="btn btn-sm" style="background:#ef4444; width:100%; margin-top:6px;" onclick="agregarFilaItemBodega('contenedorItemsSalida')">➕ Añadir Otro Item</button>
+              </div>
+
+              <div id="grupoSalidaOrden" style="display:none;">
+                <div class="form-group"><label style="color:#f59e0b;">Orden de Fabricación (OP)</label><select id="bodSalOrdenSelect" onchange="autocompletarProductoOrdenSalida()"><option value="">-- Selecciona OP --</option></select></div>
+                <div class="form-group"><label style="color:#38bdf8;">Referencia Producto Terminado</label><input type="text" id="bodSalProductoTerminado" placeholder="Se completa solo al elegir la OP..." readonly style="background:#1e293b;"></div>
+                <div style="display:flex; gap:10px;">
+                  <div class="form-group" style="flex:1;"><label style="color:#10b981;">Cantidad (Unid.)</label><input type="number" id="bodSalCantidadOrden" min="0" step="1"></div>
+                  <div class="form-group" style="flex:1;"><label style="color:#10b981;">Kilos Despachados</label><input type="number" id="bodSalKilosOrden" min="0" step="0.01"></div>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-danger" style="margin-top:12px;">💾 Guardar Salida</button>
+            </form>
+          </div>
+          <div class="card">
+            <h3>Últimas Salidas Registradas</h3>
+            <table><thead><tr><th>Consec.</th><th>Fecha</th><th>Detalle</th><th>Transportador</th><th>Acción</th></tr></thead><tbody id="tablaUltimasSalidasBodegaBody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <div id="bodega_bd_salidas_modulo" class="tab-content">
+        <div class="card">
+          <h2 style="color:#ef4444; margin-bottom:4px;">🗄️ Base de Datos - Salidas de Bodega</h2>
+          <p style="font-size:.8rem; color:var(--text-muted); margin-bottom:12px;">Busca por consecutivo, referencia, orden, producto o destino. Filtra por tipo y rango de fechas.</p>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;" class="no-print">
+            <input type="text" class="search-box" id="searchBodSalidas" placeholder="🔍 Buscar por consecutivo, referencia, orden o destino..." oninput="renderTablaBodSalidas()" style="flex:2; min-width:220px; margin-bottom:0;">
+            <select id="filterTipoBodSalidas" onchange="renderTablaBodSalidas()" style="flex:1; min-width:150px;"><option value="todos">Todos los tipos</option><option value="material">📦 Material / Máquina</option><option value="orden">🧾 Orden de Fabricación</option></select>
+            <input type="date" id="filterFechaDesdeBodSalidas" onchange="renderTablaBodSalidas()" style="flex:1; min-width:140px;">
+            <input type="date" id="filterFechaHastaBodSalidas" onchange="renderTablaBodSalidas()" style="flex:1; min-width:140px;">
+          </div>
+          <div style="overflow-x:auto;"><table><thead><tr><th>Consecutivo</th><th>Fecha</th><th>Tipo</th><th>Detalle</th><th>Transportador</th><th>Acción</th></tr></thead><tbody id="tablaBodSalidasBody"></tbody></table></div>
         </div>
       </div>
 
@@ -1386,6 +1528,7 @@
     let registrosMovimientos = [], registrosCorte = [], registrosEnsamble = [], registrosDespachosPT = [];
     let registrosConsumosOP = []; let dbClientes = [], dbTransportadores = [], dbProveedores = [], dbOrdenesProduccion = [];
     let dbTornilleria = [], registrosTornilleriaMovimientos = [];
+    let registrosBodEntradas = [], registrosBodSalidas = [];
     let maquinaActualKey = "Aglutinadora 1", perfilSeleccionadoAjuste = null;
     let maquinaActivaOperativa = true, ultimaFechaSeleccionada = new Date().toISOString().split('T')[0];
 
@@ -1423,8 +1566,8 @@
     // ================= LECTURAS FIREBASE =================
     db.collection('clientes').onSnapshot(s => { dbClientes = []; const dl = document.getElementById('listClientes'); if(dl) dl.innerHTML = ''; s.forEach(d => { dbClientes.push({id: d.id, ...d.data()}); if(dl) dl.innerHTML += `<option value="${d.data().nombre}">`; }); renderTablaClientes(); }, fError);
     db.collection('transportadores').onSnapshot(s => { dbTransportadores = []; const dl = document.getElementById('listTransportadores'); if(dl) dl.innerHTML = ''; s.forEach(d => { dbTransportadores.push({id: d.id, ...d.data()}); if(dl) dl.innerHTML += `<option value="${d.data().nombre}">`; }); renderTablaTransportadores(); }, fError);
-    db.collection('proveedores').onSnapshot(s => { dbProveedores = []; s.forEach(d => dbProveedores.push({id: d.id, ...d.data()})); renderTablaProveedores(); }, fError);
-    db.collection('ordenes_produccion').onSnapshot(s => { dbOrdenesProduccion = []; s.forEach(d => dbOrdenesProduccion.push({id: d.id, ...d.data()})); renderEstadoOPs(); }, fError);
+    db.collection('proveedores').onSnapshot(s => { dbProveedores = []; const dlp = document.getElementById('listProveedores'); if(dlp) dlp.innerHTML = ''; s.forEach(d => { dbProveedores.push({id: d.id, ...d.data()}); if(dlp) dlp.innerHTML += `<option value="${d.data().nombre}">`; }); renderTablaProveedores(); }, fError);
+    db.collection('ordenes_produccion').onSnapshot(s => { dbOrdenesProduccion = []; s.forEach(d => dbOrdenesProduccion.push({id: d.id, ...d.data()})); renderEstadoOPs(); cargarSelectOrdenesSalidaBodega(); }, fError);
     db.collection('estado_maquinas').onSnapshot(s => { dbEstadoMaquinasNube = {}; s.forEach(d => { dbEstadoMaquinasNube[d.id] = d.data().operativa; }); const mqObj = Object.values(MAQUINAS_MAP).find(m => m.nombre === maquinaActualKey); maquinaActivaOperativa = dbEstadoMaquinasNube[mqObj ? mqObj.nombre : 'Aglutinadora 1'] !== false; actualizarInterfazEstadoMaquina(); renderVisorMaquinas(); }, fError);
     
     let ptSeedInicialHecho = false, perfilesSeedInicialHecho = false, trabajadoresSeedInicialHecho = false;
@@ -1434,6 +1577,9 @@
 
     db.collection('tornilleria').onSnapshot(s => { dbTornilleria = []; s.forEach(d => dbTornilleria.push({docId: d.id, ...d.data()})); renderTablaTornilleriaConfig(); cargarSelectsTornilleria(); }, fError);
     db.collection('tornilleria_movimientos').onSnapshot(s => { registrosTornilleriaMovimientos = []; s.forEach(d => registrosTornilleriaMovimientos.push({id: d.id, ...d.data()})); renderKardexTornilleria(); }, fError);
+
+    db.collection('bodega_entradas').onSnapshot(s => { registrosBodEntradas = []; s.forEach(d => registrosBodEntradas.push({id: d.id, ...d.data()})); renderUltimasEntradasBodega(); renderTablaBodEntradas(); sugerirConsecutivoBodega('entrada'); }, fError);
+    db.collection('bodega_salidas').onSnapshot(s => { registrosBodSalidas = []; s.forEach(d => registrosBodSalidas.push({id: d.id, ...d.data()})); renderUltimasSalidasBodega(); renderTablaBodSalidas(); sugerirConsecutivoBodega('salida'); }, fError);
 
     function nombreTornillo(t) { return `${t.tipo} ${t.referencia}`; }
 
@@ -1506,6 +1652,339 @@
         tb.innerHTML += `<tr><td><strong>${ref}</strong></td><td style="color:#10b981;">+${d.e}</td><td style="color:#ef4444;">-${d.s}</td><td><span class="badge badge-stock" style="${stock<0?'background:rgba(239,68,68,0.2);color:#ef4444;':''}">${stock} Unid.</span></td></tr>`;
       });
       if (Object.keys(mapStock).length === 0) tb.innerHTML = `<tr><td colspan="4" style="text-align:center;">Sin referencias de tornillería registradas.</td></tr>`;
+    }
+
+    // ================= BODEGA GENERAL (ENTRADAS / SALIDAS) =================
+    const UNIDADES_MEDIDA_BODEGA = ['Kg', 'Galones', 'Unidades', 'Metros'];
+
+    function agregarFilaItemBodega(containerId, referencia, cantidad, unidad, observacion) {
+      const cont = document.getElementById(containerId); if (!cont) return;
+      const d = document.createElement('div');
+      d.className = 'item-bodega-row';
+      d.style.cssText = 'display:flex; gap:6px; margin-bottom:6px; align-items:center; flex-wrap:wrap;';
+      const opts = UNIDADES_MEDIDA_BODEGA.map(u => `<option value="${u}" ${unidad===u?'selected':''}>${u}</option>`).join('');
+      d.innerHTML = `<input type="text" class="item-bod-referencia" placeholder='Referencia (ej: Discos Flap 7")' value="${referencia||''}" style="flex:2; min-width:160px; height:32px;">
+        <input type="number" class="item-bod-cantidad" placeholder="Cantidad" min="0" step="0.01" value="${cantidad||''}" style="width:90px; height:32px;">
+        <select class="item-bod-unidad" style="width:110px; height:32px;">${opts}</select>
+        <input type="text" class="item-bod-observacion" placeholder="Observación (opcional)" value="${observacion||''}" style="flex:2; min-width:150px; height:32px;">
+        <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">🗑️</button>`;
+      cont.appendChild(d);
+      if (!unidad) d.querySelector('.item-bod-unidad').value = 'Unidades';
+    }
+
+    function iniciarItemsBodegaVacios() {
+      const ce = document.getElementById('contenedorItemsEntrada'); if (ce && ce.children.length === 0) agregarFilaItemBodega('contenedorItemsEntrada');
+      const cs = document.getElementById('contenedorItemsSalida'); if (cs && cs.children.length === 0) agregarFilaItemBodega('contenedorItemsSalida');
+    }
+
+    function leerItemsBodega(containerId) {
+      const filas = document.querySelectorAll('#' + containerId + ' .item-bodega-row');
+      const items = [];
+      filas.forEach(f => {
+        const referencia = f.querySelector('.item-bod-referencia').value.trim();
+        const cantidad = parseFloat(f.querySelector('.item-bod-cantidad').value) || 0;
+        const unidad = f.querySelector('.item-bod-unidad').value;
+        const observacion = f.querySelector('.item-bod-observacion').value.trim();
+        if (referencia && cantidad > 0) items.push({ referencia, cantidad, unidad, observacion });
+      });
+      return items;
+    }
+
+    function sugerirConsecutivoBodega(tipo) {
+      const arr = tipo === 'entrada' ? registrosBodEntradas : registrosBodSalidas;
+      const max = arr.reduce((m, r) => Math.max(m, parseInt(r.consecutivo) || 0), 0);
+      const inp = document.getElementById(tipo === 'entrada' ? 'bodEntConsecutivo' : 'bodSalConsecutivo');
+      if (inp && !inp.value) inp.value = max + 1;
+    }
+
+    function itemsResumenHtml(items) {
+      if (!items || items.length === 0) return '<small style="color:var(--text-muted);">Sin items</small>';
+      return items.map(it => {
+        const cant = (it.cantidad !== undefined) ? `${it.cantidad} ${it.unidad || ''}` : `${it.cantidadUnidades > 0 ? it.cantidadUnidades + 'u' : ''}${it.cantidadKilos > 0 ? ' ' + it.cantidadKilos + 'kg' : ''}`;
+        const obs = it.observacion ? ` <small style="color:var(--text-muted);">(${it.observacion})</small>` : '';
+        return `• ${cant} ${it.referencia}${obs}`;
+      }).join('<br>');
+    }
+
+    function guardarEntradaBodega(e) {
+      e.preventDefault();
+      const consecutivo = parseInt(document.getElementById('bodEntConsecutivo').value) || 0;
+      const fecha = document.getElementById('bodEntFecha').value;
+      const transportador = document.getElementById('bodEntTransportador').value.trim().toUpperCase();
+      const proveedor = document.getElementById('bodEntProveedor').value.trim().toUpperCase();
+      const items = leerItemsBodega('contenedorItemsEntrada');
+      if (consecutivo <= 0 || !fecha || !proveedor) { alert('❌ Completa consecutivo, fecha y proveedor.'); return; }
+      if (items.length === 0) { alert('❌ Agrega al menos un item con referencia y cantidad (unidades o kilos).'); return; }
+      const finalizar = () => {
+        db.collection('bodega_entradas').add({ consecutivo, fecha, transportador, proveedor, items, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => {
+          document.getElementById('bodEntTransportador').value = '';
+          document.getElementById('bodEntProveedor').value = '';
+          document.getElementById('bodEntConsecutivo').value = '';
+          document.getElementById('contenedorItemsEntrada').innerHTML = '';
+          agregarFilaItemBodega('contenedorItemsEntrada');
+          alert('✅ Entrada de bodega guardada.');
+        }).catch(err => alert('Error: ' + err.message));
+      };
+      if (registrosBodEntradas.some(r => parseInt(r.consecutivo) === consecutivo)) {
+        if (confirm(`⚠️ Ya existe una entrada con el consecutivo ${consecutivo}. ¿Guardar de todas formas?`)) finalizar();
+      } else finalizar();
+    }
+
+    function cargarSelectOrdenesSalidaBodega() {
+      const sel = document.getElementById('bodSalOrdenSelect'); if (!sel) return;
+      const vp = sel.value;
+      sel.innerHTML = '<option value="">-- Selecciona OP --</option>' +
+        [...dbOrdenesProduccion].sort((a,b) => String(b.codigo||'').localeCompare(String(a.codigo||''))).map(o => `<option value="${o.codigo}">${o.codigo} | ${o.producto}</option>`).join('');
+      if (vp && Array.from(sel.options).some(o => o.value === vp)) sel.value = vp;
+    }
+
+    function cambiarTipoSalidaBodega(tipo) {
+      document.getElementById('bodSalTipo').value = tipo;
+      document.getElementById('grupoSalidaMaterial').style.display = tipo === 'material' ? 'block' : 'none';
+      document.getElementById('grupoSalidaOrden').style.display = tipo === 'orden' ? 'block' : 'none';
+      document.getElementById('btnTipoSalidaMaterial').style.background = tipo === 'material' ? '#ef4444' : '#334155';
+      document.getElementById('btnTipoSalidaOrden').style.background = tipo === 'orden' ? '#ef4444' : '#334155';
+    }
+
+    function autocompletarProductoOrdenSalida() {
+      const cod = document.getElementById('bodSalOrdenSelect')?.value;
+      const ot = dbOrdenesProduccion.find(o => o.codigo === cod);
+      const inp = document.getElementById('bodSalProductoTerminado');
+      if (inp) inp.value = ot ? ot.producto : '';
+    }
+
+    function detalleSalidaBodegaHtml(r) {
+      if (r.tipo === 'orden') {
+        return `<strong style="color:#f59e0b;">OP: ${r.orden || ''}</strong><br><small>${r.productoTerminado || ''}</small><br><small>${r.cantidad || 0}u / ${r.kilos || 0}kg</small>`;
+      }
+      return itemsResumenHtml(r.items);
+    }
+
+    function guardarSalidaBodega(e) {
+      e.preventDefault();
+      const tipo = document.getElementById('bodSalTipo').value;
+      const consecutivo = parseInt(document.getElementById('bodSalConsecutivo').value) || 0;
+      const fecha = document.getElementById('bodSalFecha').value;
+      const transportador = document.getElementById('bodSalTransportador').value.trim().toUpperCase();
+      if (consecutivo <= 0 || !fecha) { alert('❌ Completa consecutivo y fecha.'); return; }
+
+      let payload;
+      if (tipo === 'orden') {
+        const orden = document.getElementById('bodSalOrdenSelect').value;
+        const productoTerminado = document.getElementById('bodSalProductoTerminado').value;
+        const cantidad = parseFloat(document.getElementById('bodSalCantidadOrden').value) || 0;
+        const kilos = parseFloat(document.getElementById('bodSalKilosOrden').value) || 0;
+        if (!orden) { alert('❌ Selecciona la Orden de Fabricación.'); return; }
+        if (cantidad <= 0 && kilos <= 0) { alert('❌ Indica la cantidad o los kilos despachados.'); return; }
+        payload = { tipo, consecutivo, fecha, transportador, orden, productoTerminado, cantidad, kilos };
+      } else {
+        const destino = document.getElementById('bodSalDestino').value.trim().toUpperCase();
+        const items = leerItemsBodega('contenedorItemsSalida');
+        if (!destino) { alert('❌ Completa el destino / entregado a.'); return; }
+        if (items.length === 0) { alert('❌ Agrega al menos un item con referencia y cantidad.'); return; }
+        payload = { tipo, consecutivo, fecha, transportador, destino, items };
+      }
+
+      const finalizar = () => {
+        db.collection('bodega_salidas').add({ ...payload, timestamp: firebase.firestore.FieldValue.serverTimestamp() }).then(() => {
+          document.getElementById('bodSalTransportador').value = '';
+          document.getElementById('bodSalConsecutivo').value = '';
+          if (tipo === 'orden') {
+            document.getElementById('bodSalOrdenSelect').value = '';
+            document.getElementById('bodSalProductoTerminado').value = '';
+            document.getElementById('bodSalCantidadOrden').value = '';
+            document.getElementById('bodSalKilosOrden').value = '';
+          } else {
+            document.getElementById('bodSalDestino').value = '';
+            document.getElementById('contenedorItemsSalida').innerHTML = '';
+            agregarFilaItemBodega('contenedorItemsSalida');
+          }
+          alert('✅ Salida de bodega guardada.');
+        }).catch(err => alert('Error: ' + err.message));
+      };
+      if (registrosBodSalidas.some(r => parseInt(r.consecutivo) === consecutivo)) {
+        if (confirm(`⚠️ Ya existe una salida con el consecutivo ${consecutivo}. ¿Guardar de todas formas?`)) finalizar();
+      } else finalizar();
+    }
+
+    function renderUltimasEntradasBodega() {
+      const tb = document.getElementById('tablaUltimasEntradasBodegaBody'); if (!tb) return;
+      const arr = [...registrosBodEntradas].sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)).slice(0, 15);
+      tb.innerHTML = arr.map(r => `<tr><td><strong style="color:#10b981;">#${r.consecutivo}</strong></td><td><small>${r.fecha || ''}</small></td><td>${itemsResumenHtml(r.items)}</td><td><small>${r.proveedor || ''}</small></td><td><button class="btn btn-danger btn-sm" onclick="borrarRegistroUniversal('bodega_entradas','${r.id}','Entrada de Bodega')">🗑️</button></td></tr>`).join('');
+      if (arr.length === 0) tb.innerHTML = '<tr><td colspan="5" style="text-align:center;">Sin entradas registradas.</td></tr>';
+    }
+
+    function renderUltimasSalidasBodega() {
+      const tb = document.getElementById('tablaUltimasSalidasBodegaBody'); if (!tb) return;
+      const arr = [...registrosBodSalidas].sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0)).slice(0, 15);
+      tb.innerHTML = arr.map(r => `<tr><td><strong style="color:#ef4444;">#${r.consecutivo}</strong></td><td><small>${r.fecha || ''}</small></td><td>${detalleSalidaBodegaHtml(r)}</td><td><small>${r.transportador || ''}</small></td><td><button class="btn btn-danger btn-sm" onclick="borrarRegistroUniversal('bodega_salidas','${r.id}','Salida de Bodega')">🗑️</button></td></tr>`).join('');
+      if (arr.length === 0) tb.innerHTML = '<tr><td colspan="5" style="text-align:center;">Sin salidas registradas.</td></tr>';
+    }
+
+    function cargarFiltroProveedorBodEntradas() {
+      const sel = document.getElementById('filterProveedorBodEntradas'); if (!sel) return;
+      const vp = sel.value;
+      const proveedoresUnicos = [...new Set(registrosBodEntradas.map(r => r.proveedor).filter(Boolean))].sort();
+      sel.innerHTML = '<option value="todos">Todos los proveedores</option>' + proveedoresUnicos.map(p => `<option value="${p}">${p}</option>`).join('');
+      if (vp && Array.from(sel.options).some(o => o.value === vp)) sel.value = vp;
+    }
+
+    function renderTablaBodEntradas() {
+      cargarFiltroProveedorBodEntradas();
+      const tb = document.getElementById('tablaBodEntradasBody'); if (!tb) return;
+      const b = (document.getElementById('searchBodEntradas')?.value || '').toLowerCase().trim();
+      const fp = document.getElementById('filterProveedorBodEntradas')?.value || 'todos';
+      const fd = document.getElementById('filterFechaDesdeBodEntradas')?.value || '';
+      const fh = document.getElementById('filterFechaHastaBodEntradas')?.value || '';
+      let arr = [...registrosBodEntradas];
+      if (fp !== 'todos') arr = arr.filter(r => r.proveedor === fp);
+      if (fd) arr = arr.filter(r => (r.fecha || '') >= fd);
+      if (fh) arr = arr.filter(r => (r.fecha || '') <= fh);
+      if (b) arr = arr.filter(r => {
+        const itemsTxt = (r.items || []).map(it => it.referencia + ' ' + (it.observacion||'')).join(' ').toLowerCase();
+        return String(r.consecutivo).includes(b) || itemsTxt.includes(b) || String(r.proveedor || '').toLowerCase().includes(b) || String(r.transportador || '').toLowerCase().includes(b);
+      });
+      arr.sort((a, b2) => (parseInt(b2.consecutivo) || 0) - (parseInt(a.consecutivo) || 0));
+      tb.innerHTML = arr.map(r => `<tr><td><strong style="color:#10b981;">#${r.consecutivo}</strong></td><td><small>${r.fecha || ''}</small></td><td>${itemsResumenHtml(r.items)}</td><td><small>${r.transportador || ''}</small></td><td><small>${r.proveedor || ''}</small></td><td><button class="btn btn-danger btn-sm" onclick="borrarRegistroUniversal('bodega_entradas','${r.id}','Entrada de Bodega')">🗑️</button></td></tr>`).join('');
+      if (arr.length === 0) tb.innerHTML = '<tr><td colspan="6" style="text-align:center;">Sin resultados.</td></tr>';
+    }
+
+    function renderTablaBodSalidas() {
+      const tb = document.getElementById('tablaBodSalidasBody'); if (!tb) return;
+      const b = (document.getElementById('searchBodSalidas')?.value || '').toLowerCase().trim();
+      const ft = document.getElementById('filterTipoBodSalidas')?.value || 'todos';
+      const fd = document.getElementById('filterFechaDesdeBodSalidas')?.value || '';
+      const fh = document.getElementById('filterFechaHastaBodSalidas')?.value || '';
+      let arr = [...registrosBodSalidas];
+      if (ft !== 'todos') arr = arr.filter(r => (r.tipo || 'material') === ft);
+      if (fd) arr = arr.filter(r => (r.fecha || '') >= fd);
+      if (fh) arr = arr.filter(r => (r.fecha || '') <= fh);
+      if (b) arr = arr.filter(r => {
+        if (r.tipo === 'orden') {
+          return String(r.consecutivo).includes(b) || String(r.orden || '').toLowerCase().includes(b) || String(r.productoTerminado || '').toLowerCase().includes(b);
+        }
+        const itemsTxt = (r.items || []).map(it => it.referencia + ' ' + (it.observacion||'')).join(' ').toLowerCase();
+        return String(r.consecutivo).includes(b) || itemsTxt.includes(b) || String(r.destino || '').toLowerCase().includes(b) || String(r.transportador || '').toLowerCase().includes(b);
+      });
+      arr.sort((a, b2) => (parseInt(b2.consecutivo) || 0) - (parseInt(a.consecutivo) || 0));
+      tb.innerHTML = arr.map(r => `<tr><td><strong style="color:#ef4444;">#${r.consecutivo}</strong></td><td><small>${r.fecha || ''}</small></td><td><small>${r.tipo === 'orden' ? '🧾 Orden' : '📦 Material'}</small></td><td>${detalleSalidaBodegaHtml(r)}</td><td><small>${r.transportador || ''}</small></td><td><button class="btn btn-danger btn-sm" onclick="borrarRegistroUniversal('bodega_salidas','${r.id}','Salida de Bodega')">🗑️</button></td></tr>`).join('');
+      if (arr.length === 0) tb.innerHTML = '<tr><td colspan="6" style="text-align:center;">Sin resultados.</td></tr>';
+    }
+
+    // ================= CUADRO DE ÓRDENES (VISTA DIARIA DIDÁCTICA) =================
+    let cuadroOrdenesFilas = [];
+
+    const CUADRO_ORDENES_ESTADOS = {
+      listo: { label: '🔵 Listo / Despacho', bg: '#7c93d6', text: '#0b1120' },
+      proceso: { label: '🟡 En Proceso', bg: '#f5e642', text: '#3a3000' },
+      cola: { label: '⬜ En Cola', bg: '#eef1f8', text: '#1b2436' },
+      reparacion: { label: '🔷 Reparación / Espera Orden', bg: '#1f5aa8', text: '#ffffff' }
+    };
+
+    function filaCuadroOrdenesVacia() {
+      return { fechaRecibido: '', ot: '', cantidad: 0, referencia: '', prioridad: '', estadoCantidad: 0, observacion: '', fechaTerminada: '', fechaCompromiso: '', fechaEstimada: '', colorEstado: 'cola' };
+    }
+
+    function cargarCuadroOrdenes(fecha) {
+      if (!fecha) return;
+      const inp = document.getElementById('cuadroOrdenesFecha'); if (inp) inp.value = fecha;
+      db.collection('cuadro_ordenes_dias').doc(fecha).get().then(doc => {
+        cuadroOrdenesFilas = doc.exists ? (doc.data().filas || []) : [];
+        const lbl = document.getElementById('lblCuadroOrdenesActualizado');
+        if (lbl) {
+          const ts = doc.exists ? doc.data().actualizado : null;
+          lbl.textContent = ts ? `Última actualización de este día: ${new Date(ts.seconds * 1000).toLocaleString('es-CO')}` : 'Sin guardar aún para este día. Usa "Copiar Día Anterior" o "Agregar Fila".';
+        }
+        renderCuadroOrdenes();
+      }).catch(err => alert('Error cargando el cuadro: ' + err.message));
+    }
+
+    function shiftDiaCuadroOrdenes(dir) {
+      const actual = document.getElementById('cuadroOrdenesFecha')?.value || new Date().toISOString().split('T')[0];
+      const d = new Date(actual + 'T00:00:00'); d.setDate(d.getDate() + dir);
+      cargarCuadroOrdenes(d.toISOString().split('T')[0]);
+    }
+
+    function irHoyCuadroOrdenes() { cargarCuadroOrdenes(new Date().toISOString().split('T')[0]); }
+
+    function copiarCuadroOrdenesDiaAnterior() {
+      const actual = document.getElementById('cuadroOrdenesFecha')?.value; if (!actual) return;
+      const d = new Date(actual + 'T00:00:00'); d.setDate(d.getDate() - 1);
+      const fechaAnterior = d.toISOString().split('T')[0];
+      if (!confirm(`Esto reemplazará las filas actuales en pantalla (aún sin guardar) con las del ${fechaAnterior}. ¿Continuar?`)) return;
+      db.collection('cuadro_ordenes_dias').doc(fechaAnterior).get().then(doc => {
+        if (!doc.exists || !(doc.data().filas || []).length) { alert(`No hay cuadro guardado para el ${fechaAnterior}.`); return; }
+        cuadroOrdenesFilas = JSON.parse(JSON.stringify(doc.data().filas));
+        renderCuadroOrdenes();
+        alert('✅ Copiado. Ajusta lo que produjo la noche anterior y haz clic en "💾 Guardar Cuadro del Día" para confirmar.');
+      }).catch(err => alert('Error: ' + err.message));
+    }
+
+    function guardarCuadroOrdenes() {
+      const fecha = document.getElementById('cuadroOrdenesFecha')?.value; if (!fecha) { alert('Selecciona una fecha primero.'); return; }
+      db.collection('cuadro_ordenes_dias').doc(fecha).set({ filas: cuadroOrdenesFilas, actualizado: firebase.firestore.FieldValue.serverTimestamp() }).then(() => {
+        alert('✅ Cuadro del día guardado.');
+        const lbl = document.getElementById('lblCuadroOrdenesActualizado'); if (lbl) lbl.textContent = `Última actualización de este día: ${new Date().toLocaleString('es-CO')}`;
+      }).catch(err => alert('Error: ' + err.message));
+    }
+
+    function agregarFilaCuadroOrdenes() { cuadroOrdenesFilas.push(filaCuadroOrdenesVacia()); renderCuadroOrdenes(); }
+
+    function eliminarFilaCuadroOrdenes(idx) {
+      if (!confirm('¿Quitar esta fila del cuadro en pantalla? (Guarda para que el cambio quede definitivo)')) return;
+      cuadroOrdenesFilas.splice(idx, 1);
+      renderCuadroOrdenes();
+    }
+
+    function actualizarCampoCuadroOrdenes(idx, campo, valor) {
+      if (!cuadroOrdenesFilas[idx]) return;
+      cuadroOrdenesFilas[idx][campo] = (campo === 'cantidad' || campo === 'estadoCantidad') ? (parseFloat(valor) || 0) : valor;
+      if (campo === 'cantidad' || campo === 'estadoCantidad') {
+        const restanteEl = document.querySelector(`.co-restante[data-idx="${idx}"]`);
+        if (restanteEl) restanteEl.textContent = Math.max(0, (cuadroOrdenesFilas[idx].cantidad || 0) - (cuadroOrdenesFilas[idx].estadoCantidad || 0));
+      }
+      if (campo === 'colorEstado') {
+        const tr = document.querySelector(`tr.co-row[data-idx="${idx}"]`);
+        const est = CUADRO_ORDENES_ESTADOS[valor] || CUADRO_ORDENES_ESTADOS.cola;
+        if (tr) { tr.style.background = est.bg; tr.style.color = est.text; }
+      }
+      renderResumenCuadroOrdenes();
+    }
+
+    function renderResumenCuadroOrdenes() {
+      const el = document.getElementById('resumenCuadroOrdenes'); if (!el) return;
+      const conteo = { listo: 0, proceso: 0, cola: 0, reparacion: 0 };
+      cuadroOrdenesFilas.forEach(f => { const k = f.colorEstado || 'cola'; conteo[k] = (conteo[k] || 0) + 1; });
+      el.innerHTML = Object.keys(CUADRO_ORDENES_ESTADOS).map(k => {
+        const e = CUADRO_ORDENES_ESTADOS[k];
+        return `<div class="tile" style="background:var(--card-bg); border:1px solid var(--border-color); border-left:4px solid ${e.bg}; border-radius:8px; padding:10px 14px; min-width:150px;"><div style="font-size:.75rem; color:var(--text-muted);">${e.label}</div><div style="font-size:1.4rem; font-weight:bold;">${conteo[k] || 0}</div></div>`;
+      }).join('') + `<div class="tile" style="background:var(--card-bg); border:1px solid var(--border-color); border-left:4px solid #a855f7; border-radius:8px; padding:10px 14px; min-width:150px;"><div style="font-size:.75rem; color:var(--text-muted);">📦 Total Órdenes del Día</div><div style="font-size:1.4rem; font-weight:bold;">${cuadroOrdenesFilas.length}</div></div>`;
+    }
+
+    function renderCuadroOrdenes() {
+      const tb = document.getElementById('tablaCuadroOrdenesBody'); if (!tb) return;
+      tb.innerHTML = cuadroOrdenesFilas.map((f, idx) => {
+        const est = CUADRO_ORDENES_ESTADOS[f.colorEstado || 'cola'] || CUADRO_ORDENES_ESTADOS.cola;
+        const restante = Math.max(0, (f.cantidad || 0) - (f.estadoCantidad || 0));
+        const opts = Object.keys(CUADRO_ORDENES_ESTADOS).map(k => `<option value="${k}" ${(f.colorEstado || 'cola') === k ? 'selected' : ''}>${CUADRO_ORDENES_ESTADOS[k].label}</option>`).join('');
+        return `<tr class="co-row" data-idx="${idx}" style="background:${est.bg}; color:${est.text};">
+          <td><input type="date" value="${f.fechaRecibido || ''}" oninput="actualizarCampoCuadroOrdenes(${idx},'fechaRecibido',this.value)" style="min-width:130px;"></td>
+          <td><input type="text" value="${f.ot || ''}" oninput="actualizarCampoCuadroOrdenes(${idx},'ot',this.value)" style="width:95px; text-transform:uppercase;"></td>
+          <td><input type="number" value="${f.cantidad || 0}" oninput="actualizarCampoCuadroOrdenes(${idx},'cantidad',this.value)" style="width:75px;"></td>
+          <td><input type="text" value="${f.referencia || ''}" oninput="actualizarCampoCuadroOrdenes(${idx},'referencia',this.value)" style="min-width:220px;"></td>
+          <td><input type="text" value="${f.prioridad || ''}" oninput="actualizarCampoCuadroOrdenes(${idx},'prioridad',this.value)" style="width:55px; text-align:center;"></td>
+          <td><input type="number" value="${f.estadoCantidad || 0}" oninput="actualizarCampoCuadroOrdenes(${idx},'estadoCantidad',this.value)" style="width:75px;"></td>
+          <td style="text-align:center; font-weight:bold;"><span class="co-restante" data-idx="${idx}">${restante}</span></td>
+          <td><input type="text" value="${f.observacion || ''}" oninput="actualizarCampoCuadroOrdenes(${idx},'observacion',this.value)" style="min-width:230px;"></td>
+          <td><select onchange="actualizarCampoCuadroOrdenes(${idx},'colorEstado',this.value)" style="min-width:180px;">${opts}</select></td>
+          <td><input type="date" value="${f.fechaTerminada || ''}" oninput="actualizarCampoCuadroOrdenes(${idx},'fechaTerminada',this.value)" style="min-width:130px;"></td>
+          <td><input type="date" value="${f.fechaCompromiso || ''}" oninput="actualizarCampoCuadroOrdenes(${idx},'fechaCompromiso',this.value)" style="min-width:130px;"></td>
+          <td><input type="date" value="${f.fechaEstimada || ''}" oninput="actualizarCampoCuadroOrdenes(${idx},'fechaEstimada',this.value)" style="min-width:130px;"></td>
+          <td><button type="button" class="btn btn-danger btn-sm" onclick="eliminarFilaCuadroOrdenes(${idx})">🗑️</button></td>
+        </tr>`;
+      }).join('');
+      if (cuadroOrdenesFilas.length === 0) tb.innerHTML = `<tr><td colspan="13" style="text-align:center; padding:20px;">Sin filas para este día. Usa "➕ Agregar Fila" o "📋 Copiar Día Anterior".</td></tr>`;
+      renderResumenCuadroOrdenes();
     }
 
     function renderTablaTrabajadoresPersonal() {
@@ -1776,15 +2255,15 @@ function switchMachineTab(btnEl, key) {
       cont.innerHTML = '';
       const estibas = parseFloat(document.getElementById('ensCantRealizada')?.value) || 0;
       if (ot && ot.receta && ot.receta.length > 0) {
-        ot.receta.forEach(r => agregarFilaPerfilUsadoEnsamble(r.perfil, (r.cantidadPorEstiba * estibas) || '', r.cantidadPorEstiba));
-        if (lbl) lbl.textContent = `📋 Receta sugerida de la OT × ${estibas || 0} estibas. Ajusta si hubo gasto extra (reparaciones, etc.) o usa "🔄 Recalcular" si cambias las estibas.`;
+        ot.receta.forEach(r => agregarFilaPerfilUsadoEnsamble(r.perfil, (r.manual ? r.cantidadPorEstiba : r.cantidadPorEstiba * estibas) || '', r.manual ? 0 : r.cantidadPorEstiba));
+        if (lbl) lbl.textContent = `📋 Receta sugerida de la OT × ${estibas || 0} estibas (las partes marcadas "Manual" no se multiplican). Ajusta si hubo gasto extra (reparaciones, etc.) o usa "🔄 Recalcular" si cambias las estibas.`;
       } else {
         if (lbl) lbl.textContent = 'Esta OT no tiene receta definida. Agrega manualmente los perfiles usados si aplica.';
       }
       const contTor = document.getElementById('contenedorTornillosUsadosEnsamble'); if (contTor) contTor.innerHTML = '';
       const lblTor = document.getElementById('lblRecetaTornillosAutoEnsamble');
       if (ot && ot.recetaTornillos && ot.recetaTornillos.length > 0) {
-        ot.recetaTornillos.forEach(r => agregarFilaTornilloUsadoEnsamble(r.referencia, (r.cantidadPorEstiba * estibas) || '', r.cantidadPorEstiba));
+        ot.recetaTornillos.forEach(r => agregarFilaTornilloUsadoEnsamble(r.referencia, (r.manual ? r.cantidadPorEstiba : r.cantidadPorEstiba * estibas) || '', r.manual ? 0 : r.cantidadPorEstiba));
         if (lblTor) lblTor.textContent = `📋 Receta de tornillos sugerida de la OT × ${estibas || 0} estibas. Ajusta si hace falta o usa "🔄 Recalcular" si cambias las estibas.`;
       } else {
         if (lblTor) lblTor.textContent = 'Esta OT no tiene receta de tornillos definida. Agrégalos manualmente si aplica.';
@@ -1872,7 +2351,14 @@ function switchMachineTab(btnEl, key) {
 
     const ROLES_RECETA_SUGERIDOS = ['Listón Superior', 'Listón Inferior', 'Listón Extra 1', 'Listón Extra 2', 'Listón Extra 3'];
 
-    function agregarFilaRecetaOP(rol, perfil, cantidad) {
+    function toggleManualReceta(chk) {
+      const fila = chk.closest('.receta-op-row, .receta-tornillo-row'); if (!fila) return;
+      const lbl = fila.querySelector('.receta-cant-label');
+      if (lbl) lbl.textContent = chk.checked ? 'Cant. Total' : 'Cant/Estiba';
+      calcularTotalesRecetaOP();
+    }
+
+    function agregarFilaRecetaOP(rol, perfil, cantidad, manual) {
       const cont = document.getElementById('contenedorRecetaOP'); if (!cont) return;
       const numFila = cont.children.length;
       const rolSugerido = rol || ROLES_RECETA_SUGERIDOS[numFila] || `Parte Extra ${numFila - 4}`;
@@ -1887,9 +2373,13 @@ function switchMachineTab(btnEl, key) {
         <div style="display:flex; gap:6px; align-items:center;">
           <select class="receta-perfil" style="flex:2; height:34px; min-width:0;" onchange="calcularTotalesRecetaOP()">${crearOpcionesPerfiles()}</select>
           <div style="flex:1; display:flex; flex-direction:column; align-items:center;">
-            <small style="color:var(--text-muted); font-size:.65rem;">Cant/Estiba</small>
+            <small class="receta-cant-label" style="color:var(--text-muted); font-size:.65rem;">${manual ? 'Cant. Total' : 'Cant/Estiba'}</small>
             <input type="number" class="receta-cantidad" placeholder="0" value="${cantidad||''}" style="width:100%; height:32px; text-align:center;" oninput="calcularTotalesRecetaOP()">
           </div>
+          <label style="display:flex; flex-direction:column; align-items:center; font-size:.55rem; color:var(--text-muted); width:42px; cursor:pointer;" title="Cantidad total fija para toda la orden (no se multiplica por la Meta) — úsalo para pedidos no estándar, huacales, etc.">
+            <input type="checkbox" class="receta-manual-chk" ${manual?'checked':''} style="width:auto; margin:0 0 2px;" onchange="toggleManualReceta(this)">
+            Manual
+          </label>
           <div style="width:70px; text-align:center;">
             <small style="color:var(--text-muted); font-size:.65rem; display:block;">Total</small>
             <span class="receta-total-lbl" style="font-weight:bold; color:#10b981; font-size:1rem;">0</span>
@@ -1904,13 +2394,15 @@ function switchMachineTab(btnEl, key) {
       const meta = parseFloat(document.getElementById('opCantSolicitada')?.value) || 0;
       document.querySelectorAll('#contenedorRecetaOP .receta-op-row').forEach(fila => {
         const cant = parseFloat(fila.querySelector('.receta-cantidad').value) || 0;
+        const manual = fila.querySelector('.receta-manual-chk')?.checked;
         const lbl = fila.querySelector('.receta-total-lbl');
-        if (lbl) lbl.textContent = (cant * meta).toFixed(0);
+        if (lbl) lbl.textContent = (manual ? cant : cant * meta).toFixed(0);
       });
       document.querySelectorAll('#contenedorRecetaTornillosOP .receta-tornillo-row').forEach(fila => {
         const cant = parseFloat(fila.querySelector('.receta-tornillo-cantidad').value) || 0;
+        const manual = fila.querySelector('.receta-manual-chk')?.checked;
         const lbl = fila.querySelector('.receta-tornillo-total-lbl');
-        if (lbl) lbl.textContent = (cant * meta).toFixed(0);
+        if (lbl) lbl.textContent = (manual ? cant : cant * meta).toFixed(0);
       });
     }
 
@@ -1921,21 +2413,26 @@ function switchMachineTab(btnEl, key) {
         const rol = f.querySelector('.receta-rol').value.trim();
         const perfil = f.querySelector('.receta-perfil').value;
         const cantidad = parseFloat(f.querySelector('.receta-cantidad').value) || 0;
-        if (perfil && cantidad > 0) receta.push({ rol, perfil, cantidadPorEstiba: cantidad });
+        const manual = f.querySelector('.receta-manual-chk')?.checked || false;
+        if (perfil && cantidad > 0) receta.push({ rol, perfil, cantidadPorEstiba: cantidad, manual });
       });
       return receta;
     }
 
-    function agregarFilaRecetaTornilloOP(referencia, cantidad) {
+    function agregarFilaRecetaTornilloOP(referencia, cantidad, manual) {
       const cont = document.getElementById('contenedorRecetaTornillosOP'); if (!cont) return;
       const d = document.createElement('div');
       d.className = 'receta-tornillo-row';
       d.style.cssText = 'display:flex; gap:6px; align-items:center; margin-bottom:6px;';
       d.innerHTML = `<select class="receta-tornillo" style="flex:2; height:34px; min-width:0;" onchange="calcularTotalesRecetaOP()">${crearOpcionesTornilleria()}</select>
         <div style="flex:1; display:flex; flex-direction:column; align-items:center;">
-          <small style="color:var(--text-muted); font-size:.65rem;">Cant/Estiba</small>
+          <small class="receta-cant-label" style="color:var(--text-muted); font-size:.65rem;">${manual ? 'Cant. Total' : 'Cant/Estiba'}</small>
           <input type="number" class="receta-tornillo-cantidad" placeholder="0" value="${cantidad||''}" style="width:100%; height:32px; text-align:center;" oninput="calcularTotalesRecetaOP()">
         </div>
+        <label style="display:flex; flex-direction:column; align-items:center; font-size:.55rem; color:var(--text-muted); width:42px; cursor:pointer;" title="Cantidad total fija para toda la orden (no se multiplica por la Meta)">
+          <input type="checkbox" class="receta-manual-chk" ${manual?'checked':''} style="width:auto; margin:0 0 2px;" onchange="toggleManualReceta(this)">
+          Manual
+        </label>
         <div style="width:70px; text-align:center;">
           <small style="color:var(--text-muted); font-size:.65rem; display:block;">Total</small>
           <span class="receta-tornillo-total-lbl" style="font-weight:bold; color:#f59e0b; font-size:1rem;">0</span>
@@ -1952,7 +2449,8 @@ function switchMachineTab(btnEl, key) {
       filas.forEach(f => {
         const referencia = f.querySelector('.receta-tornillo').value;
         const cantidad = parseFloat(f.querySelector('.receta-tornillo-cantidad').value) || 0;
-        if (referencia && cantidad > 0) receta.push({ referencia, cantidadPorEstiba: cantidad });
+        const manual = f.querySelector('.receta-manual-chk')?.checked || false;
+        if (referencia && cantidad > 0) receta.push({ referencia, cantidadPorEstiba: cantidad, manual });
       });
       return receta;
     }
@@ -1979,9 +2477,9 @@ function switchMachineTab(btnEl, key) {
       const sel = document.getElementById('opProductoSelect');
       if(sel) { for(const opt of sel.options) { if(opt.value === o.producto) { opt.selected = true; break; } } }
       document.getElementById('contenedorRecetaOP').innerHTML = '';
-      (o.receta || []).forEach(r => agregarFilaRecetaOP(r.rol, r.perfil, r.cantidadPorEstiba));
+      (o.receta || []).forEach(r => agregarFilaRecetaOP(r.rol, r.perfil, r.cantidadPorEstiba, r.manual));
       document.getElementById('contenedorRecetaTornillosOP').innerHTML = '';
-      (o.recetaTornillos || []).forEach(r => agregarFilaRecetaTornilloOP(r.referencia, r.cantidadPorEstiba));
+      (o.recetaTornillos || []).forEach(r => agregarFilaRecetaTornilloOP(r.referencia, r.cantidadPorEstiba, r.manual));
       calcularTotalesRecetaOP();
       document.getElementById('btnSubmitOP').textContent = '💾 Guardar Cambios';
       document.getElementById('btnCancelarEdicionOP').style.display = 'block';
@@ -2021,9 +2519,9 @@ function switchMachineTab(btnEl, key) {
           if(o.meta > 0) { if(o.hechas >= o.meta) estadoProd = '<span class="badge badge-prod">🟢 FABRICADA</span>'; else if(o.hechas > 0) estadoProd = '<span class="badge badge-dia">🟡 EN PROCESO</span>'; else estadoProd = '<span class="badge" style="background:#475569;color:white;">⚪ PENDIENTE</span>'; } else { estadoProd = '<span class="badge" style="background:#475569;color:white;">- Sin Meta -</span>'; }
           if(o.despachadas >= o.meta && o.meta > 0) { estadoLogistica = '<span class="badge" style="background:#0284c7;color:white;">📦 100% DESPACHADA</span>'; } else if(o.despachadas >= o.hechas && o.hechas > 0 && o.meta === 0) { estadoLogistica = '<span class="badge" style="background:#0284c7;color:white;">📦 DESP. Y FACTURADA</span>'; } else if(o.despachadas > 0) { estadoLogistica = '<span class="badge badge-noche">🚚 DESP. PARCIAL</span>'; } else { estadoLogistica = '<span class="badge" style="background:#475569;color:white;">⏳ EN BODEGA</span>'; }
           const btnBorrar = o.esOficial ? `<div style="display:flex;gap:4px;"><button class="btn btn-warning btn-sm" onclick="prepararEdicionOP('${o.id}')">✏️</button><button class="btn btn-danger btn-sm" onclick="borrarOP('${o.id}')">🗑️</button></div>` : `<button class="btn" style="background:#475569; color:#94a3b8; cursor:help;" onclick="alert('Esta orden se creó automáticamente por un Ensamble. Borra el ensamble asociado.')" title="Orden generada automáticamente (No se puede borrar aquí)">🔒</button>`;
-          const torTexto = (o.recetaTornillos && o.recetaTornillos.length > 0) ? ` | Tornillos: ${o.recetaTornillos.map(r=>`${r.referencia} x${r.cantidadPorEstiba}`).join(', ')}` : (o.tornillosPorEstiba > 0 ? ` | Tornillos: ${o.tornillosPorEstiba}/estiba` : '');
+          const torTexto = (o.recetaTornillos && o.recetaTornillos.length > 0) ? ` | Tornillos: ${o.recetaTornillos.map(r=>`${r.referencia} x${r.cantidadPorEstiba}${r.manual?' (fijo)':'/estiba'}`).join(', ')}` : (o.tornillosPorEstiba > 0 ? ` | Tornillos: ${o.tornillosPorEstiba}/estiba` : '');
           const tieneReceta = (o.receta && o.receta.length > 0) || (o.recetaTornillos && o.recetaTornillos.length > 0);
-          const recetaTag = tieneReceta ? ` <span title="Receta: ${(o.receta||[]).map(r=>`${r.rol||'Perfil'}: ${r.perfil} x${r.cantidadPorEstiba}`).join(' | ')}${torTexto}" style="color:#a855f7; cursor:help;">🧾</span>` : '';
+          const recetaTag = tieneReceta ? ` <span title="Receta: ${(o.receta||[]).map(r=>`${r.rol||'Perfil'}: ${r.perfil} x${r.cantidadPorEstiba}${r.manual?' (fijo)':'/estiba'}`).join(' | ')}${torTexto}" style="color:#a855f7; cursor:help;">🧾</span>` : '';
           const rowHTML = `<tr><td><strong style="color:#f59e0b">${o.codigo}</strong><br><small>${o.fecha}</small></td><td><small style="color:#38bdf8">${o.producto}</small>${recetaTag}</td><td>${o.meta>0?o.meta:'-'}</td><td><strong style="color:#10b981">${o.hechas}</strong></td><td style="color:#ef4444; font-weight:bold;">${faltanDisplay}</td><td>${estadoProd}</td><td>${estadoLogistica}</td><td>${btnBorrar}</td></tr>`;
           if (o.meta > 0 && o.hechas >= o.meta && o.despachadas >= o.meta) { tbTerminadas.innerHTML += rowHTML; } else { tbActivas.innerHTML += rowHTML; }
         });
@@ -4599,14 +5097,21 @@ function switchMachineTab(btnEl, key) {
       try { renderTablaConsumosOP(); } catch(e) {}
       try { renderTablaTornilleriaConfig(); } catch(e) {}
       try { renderKardexTornilleria(); } catch(e) {}
+      try { renderUltimasEntradasBodega(); } catch(e) {}
+      try { renderUltimasSalidasBodega(); } catch(e) {}
+      try { renderTablaBodEntradas(); } catch(e) {}
+      try { renderTablaBodSalidas(); } catch(e) {}
+      try { cargarSelectOrdenesSalidaBodega(); } catch(e) {}
     }
 
     // ================= ARRANQUE =================
     document.addEventListener('DOMContentLoaded', () => {
       const hoy = new Date().toISOString().split('T')[0];
-      ['prodFecha','ensFecha','despFecha','corteFecha','mpFecha','entradaFecha','salidaFecha','filterFechaDiaria','opFecha','consumoFecha','mantFecha','excSemanaLunes','reporteDiarioFecha','tornMovFecha'].forEach(id=>{
+      ['prodFecha','ensFecha','despFecha','corteFecha','mpFecha','entradaFecha','salidaFecha','filterFechaDiaria','opFecha','consumoFecha','mantFecha','excSemanaLunes','reporteDiarioFecha','tornMovFecha','bodEntFecha','bodSalFecha'].forEach(id=>{
         if(document.getElementById(id)) document.getElementById(id).value = hoy;
       });
+      iniciarItemsBodegaVacios();
+      irHoyCuadroOrdenes();
       actualizarCalculoJornada();
       const pB = document.querySelector('.sub-tab-btn'); 
       if(pB) switchMachineTab(pB, 'ag1');
