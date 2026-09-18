@@ -47,6 +47,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 </head>
 <body>
 
@@ -281,6 +282,33 @@
       </div>
       <div class="card"><h2>Mis Últimos Registros</h2><div id="listaHistorialAuxiliar"><p style="color:var(--muted); font-size:.85rem;">Sin registros todavía.</p></div></div>
     </div>
+
+    <!-- DESCARGUE DE INVENTARIO (BODEGA) -->
+    <div id="vistaDescargue" class="hidden">
+      <div class="card" id="cardDescargueLista">
+        <h2>📦 Órdenes de Descargue Pendientes</h2>
+        <div id="listaDescargasPendientes"><p style="color:var(--muted); font-size:.85rem;">Cargando...</p></div>
+      </div>
+
+      <div class="card hidden" id="cardDescargueDetalle">
+        <h2>🧾 Orden #<span id="detConsecutivo"></span></h2>
+        <p style="color:var(--muted); font-size:.85rem; margin-top:-6px;">Para la Orden: <strong id="detOrden" style="color:var(--text);"></strong></p>
+        <label style="margin-top:10px;">Perfiles a Descargar</label>
+        <div id="detListaPerfiles" style="margin-bottom:10px;"></div>
+        <div class="form-group">
+          <label>📷 Foto de las Estibas Descargadas</label>
+          <input type="file" id="descFoto" accept="image/*" capture="environment">
+        </div>
+        <div class="msg" id="msgDescargue"></div>
+        <button type="button" class="btn btn-success" id="btnConfirmarDescargue" onclick="confirmarDescargue()">✅ Confirmar Descargue Realizado</button>
+        <button type="button" class="btn-link" style="width:100%;text-align:center;" onclick="volverListaDescargue()">◂ Volver a la lista</button>
+      </div>
+
+      <div class="card">
+        <h2>Mis Descargues Completados</h2>
+        <div id="listaHistorialDescargue"><p style="color:var(--muted); font-size:.85rem;">Sin registros todavía.</p></div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -305,7 +333,7 @@
     let usuarioActual = null, perfilUsuario = null, dbPerfilesNube = [];
 
     function mostrarVista(id) {
-      ['vistaLogin','vistaRegistro','vistaPendiente','vistaSinMaquina','vistaRedirect','vistaProduccion','vistaEnsamble','vistaSierra','vistaLogistica','vistaAuxiliar'].forEach(v => {
+      ['vistaLogin','vistaRegistro','vistaPendiente','vistaSinMaquina','vistaRedirect','vistaProduccion','vistaEnsamble','vistaSierra','vistaLogistica','vistaAuxiliar','vistaDescargue'].forEach(v => {
         const el = document.getElementById(v); if(el) el.classList.add('hidden');
       });
       document.getElementById(id).classList.remove('hidden');
@@ -313,7 +341,7 @@
       if(id === 'vistaRegistro') cargarListaTrabajadoresOficial();
     }
 
-    const PUESTOS_ESPECIALES = ['Ensamble', 'Sierra', 'Logística', 'Auxiliar Administrativo'];
+    const PUESTOS_ESPECIALES = ['Ensamble', 'Sierra', 'Logística', 'Auxiliar Administrativo', 'Bodega'];
 
     let listaTrabajadoresOficial = [], listaTrabajadoresCargada = false;
     function cargarListaTrabajadoresOficial() {
@@ -384,6 +412,7 @@
           else if(puesto === 'Sierra') { iniciarSierraOp(); mostrarVista('vistaSierra'); }
           else if(puesto === 'Logística') { iniciarLogisticaOp(); mostrarVista('vistaLogistica'); }
           else if(puesto === 'Auxiliar Administrativo') { iniciarAuxiliarOp(); mostrarVista('vistaAuxiliar'); }
+          else if(puesto === 'Bodega') { iniciarDescargueOp(); mostrarVista('vistaDescargue'); }
           else { iniciarFormularioMaquina(puesto); mostrarVista('vistaProduccion'); }
         } else if(perfilUsuario.rol === 'operario') {
           mostrarVista('vistaSinMaquina');
@@ -1151,6 +1180,91 @@
       document.getElementById('formAuxiliarOp').reset();
       document.getElementById('auxFecha').value = new Date().toISOString().split('T')[0];
       document.getElementById('contenedorFilasAjusteOp').innerHTML = ''; agregarFilaAjusteOp();
+    }
+
+    // ======= DESCARGUE DE INVENTARIO (BODEGA) =======
+    let descargueActual = null, descargasPendientesCache = [];
+
+    function iniciarDescargueOp() {
+      db.collection('ordenes_descargue').where('estado', '==', 'pendiente').onSnapshot(s => {
+        descargasPendientesCache = [];
+        s.forEach(d => descargasPendientesCache.push({ id: d.id, ...d.data() }));
+        descargasPendientesCache.sort((a, b) => (parseInt(b.consecutivo) || 0) - (parseInt(a.consecutivo) || 0));
+        renderListaDescargue();
+      }, err => { const c = document.getElementById('listaDescargasPendientes'); if (c) c.innerHTML = `<p style="color:var(--danger); font-size:.85rem;">Error cargando órdenes: ${err.message}</p>`; });
+
+      db.collection('ordenes_descargue').where('estado', '==', 'completado').where('completadoPor', '==', perfilUsuario.nombre).onSnapshot(s => {
+        const arr = []; s.forEach(d => arr.push({ id: d.id, ...d.data() }));
+        arr.sort((a, b) => (b.fechaCompletado?.seconds || 0) - (a.fechaCompletado?.seconds || 0));
+        renderHistorialDescargue(arr.slice(0, 15));
+      }, () => {});
+    }
+
+    function renderListaDescargue() {
+      const cont = document.getElementById('listaDescargasPendientes'); if (!cont) return;
+      if (descargasPendientesCache.length === 0) { cont.innerHTML = '<p style="color:var(--muted); font-size:.85rem;">🎉 No hay órdenes de descargue pendientes.</p>'; return; }
+      cont.innerHTML = descargasPendientesCache.map(o => {
+        const itemsTxt = (o.items || []).map(it => `${it.unidades}u ${it.perfil}`).join(', ');
+        return `<div class="hist-item" style="cursor:pointer;" onclick="abrirDetalleDescargue('${o.id}')">
+          <strong style="color:var(--warning);">#${o.consecutivo}</strong> — OT: <strong>${o.orden || ''}</strong><br>
+          <small style="color:var(--muted);">${itemsTxt}</small>
+        </div>`;
+      }).join('');
+    }
+
+    function renderHistorialDescargue(arr) {
+      const cont = document.getElementById('listaHistorialDescargue'); if (!cont) return;
+      if (!arr || arr.length === 0) { cont.innerHTML = '<p style="color:var(--muted); font-size:.85rem;">Sin registros todavía.</p>'; return; }
+      cont.innerHTML = arr.map(o => `<div class="hist-item">
+        <strong style="color:var(--success);">#${o.consecutivo}</strong> — OT: ${o.orden || ''}<br>
+        <small style="color:var(--muted);">${(o.items || []).map(it => `${it.unidades}u ${it.perfil}`).join(', ')}</small>
+        ${o.fotoURL ? `<br><a href="${o.fotoURL}" target="_blank" class="thumb-link">📷 Ver foto</a>` : ''}
+      </div>`).join('');
+    }
+
+    function abrirDetalleDescargue(id) {
+      descargueActual = descargasPendientesCache.find(o => o.id === id); if (!descargueActual) return;
+      document.getElementById('detConsecutivo').textContent = descargueActual.consecutivo;
+      document.getElementById('detOrden').textContent = descargueActual.orden || '';
+      document.getElementById('detListaPerfiles').innerHTML = (descargueActual.items || []).map(it =>
+        `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); font-size:.9rem;"><span>${it.perfil}</span><strong style="color:var(--success);">${it.unidades} u</strong></div>`
+      ).join('');
+      document.getElementById('descFoto').value = '';
+      document.getElementById('msgDescargue').style.display = 'none';
+      document.getElementById('cardDescargueLista').classList.add('hidden');
+      document.getElementById('cardDescargueDetalle').classList.remove('hidden');
+      window.scrollTo(0, 0);
+    }
+
+    function volverListaDescargue() {
+      descargueActual = null;
+      document.getElementById('cardDescargueDetalle').classList.add('hidden');
+      document.getElementById('cardDescargueLista').classList.remove('hidden');
+    }
+
+    async function confirmarDescargue() {
+      if (!descargueActual) return;
+      const file = document.getElementById('descFoto').files[0];
+      if (!file) { mostrarMsg('msgDescargue', '❌ Toma o adjunta una foto de las estibas antes de confirmar.', 'error'); return; }
+      const btn = document.getElementById('btnConfirmarDescargue');
+      btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Subiendo foto...';
+      try {
+        const storageRef = firebase.storage().ref().child(`descargues/${descargueActual.consecutivo}_${Date.now()}.jpg`);
+        const snap = await storageRef.put(file);
+        const fotoURL = await snap.ref.getDownloadURL();
+        await db.collection('ordenes_descargue').doc(descargueActual.id).update({
+          estado: 'completado',
+          fotoURL,
+          completadoPor: perfilUsuario.nombre,
+          fechaCompletado: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        mostrarMsg('msgDescargue', '✅ Descargue confirmado correctamente.', 'ok');
+        setTimeout(volverListaDescargue, 1200);
+      } catch (err) {
+        mostrarMsg('msgDescargue', '❌ Error: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false; btn.innerHTML = '✅ Confirmar Descargue Realizado';
+      }
     }
   </script>
 </body>
